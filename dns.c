@@ -7,8 +7,8 @@
 uint32_t ipv4_to_int(char *ip)
 {
     uint32_t result;
-    int i, j, left, right, res[4];
-    char tmp[4] = "";
+    int      i, j, left, right, res[4];
+    char     tmp[4] = "";
 
     // "1.8.23.0"
     // ['1', '\0', '\0', '\0']
@@ -46,13 +46,13 @@ uint32_t ipv4_to_int(char *ip)
 }
 
 
-uint32_t btoi(char *ip)
+uint32_t btoi(char *binstr)
 {
-    int i;
+    int      i;
     uint32_t result = 0;
 
     for (i=0; i<32; ++i)
-        if (ip[i] == '1')
+        if (binstr[i] == '1')
             result += 1 << (31 - i);
 
     return result;
