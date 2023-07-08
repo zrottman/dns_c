@@ -4,7 +4,8 @@ Toy Python implementation of C's inet_pton()
 
 def inet_pton(ip):
     '''
-    Convert IPv4 IP to 32-bit integer
+    Convert IPv4 IP to 32-bit integer in big-endian Network Byte Order (e.g.,
+    "0xAA/0xBB/0xCC/0xDD" for IPv4 address 0xAA.0xBB.0xCC.0xDD)
     '''
     # split `ip` at dot, convert each int to 8-bit bytestring, and concatenate
     binstr = "0b" + "".join(["{:08b}".format(int(int8)) for int8 in ip.split('.')])
