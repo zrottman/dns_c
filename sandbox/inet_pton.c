@@ -14,7 +14,6 @@ int main()
     {
         if (c == '\n') {
             buf[i] = '\0';
-            printf("Buf: %s\n", buf);
             if (inet_pton(AF_INET, buf, &s_addr) == 1) {
                 printf("--> Host Byte Order:    %u\n", s_addr);
                 printf("--> Network Byte Order: %u\n\n", htonl(s_addr));
