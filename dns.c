@@ -85,7 +85,7 @@ int main(int argc, char **argv)
     char buf[512];
     struct sockaddr_in dest;
     struct sockaddr_storage store;
-    dest.sin_port = 53;
+    dest.sin_port = htons(53);
     dest.sin_addr.s_addr = 134744072;
     dest.sin_family = AF_INET;
     // open socket
