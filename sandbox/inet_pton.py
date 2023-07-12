@@ -42,6 +42,6 @@ if __name__ == '__main__':
     display_pton("31.13.70.36")
     display_pton("172.217.14.78")
 
-    inet_pton2("8.8.8.8")
-    inet_pton2("31.13.70.36")
-    inet_pton2("172.217.14.78")
+    inet_pton_bitwise("8.8.8.8")
+    inet_pton_bitwise("31.13.70.36")
+    inet_pton_bitwise("172.217.14.78")
