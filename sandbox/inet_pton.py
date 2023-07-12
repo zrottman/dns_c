@@ -21,9 +21,27 @@ def display_pton(ip="8.8.8.8"):
     binstr, int32 = inet_pton(ip)
     print("{:<15} -> {} ({})".format(ip, binstr, int32))
 
+def inet_pton_bitwise(ip):
+    '''
+    Bitwise implementation of converter from IPv4 IP to 32-bit integer in 
+    big-endian Network Byte Order 
+    '''
+
+    num = 0
+    for chunk in ip.split('.'):
+        num <<= 8
+        num |= int(chunk)
+
+    print("{:<15} -> {} ({})".format(ip, bin(num), num))
+
+    return num
 
 if __name__ == '__main__':
 
     display_pton("8.8.8.8")
     display_pton("31.13.70.36")
     display_pton("172.217.14.78")
+
+    inet_pton2("8.8.8.8")
+    inet_pton2("31.13.70.36")
+    inet_pton2("172.217.14.78")
