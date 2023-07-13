@@ -6,3 +6,6 @@
 
 # Unignore all dirs
 !*/
+
+# Ignore tapes/ (for screen recording)
+tapes/
