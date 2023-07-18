@@ -9,10 +9,71 @@
 #include <errno.h>
 #include <assert.h>
 
+typedef struct dns_header
+{
+    u_int16_t id;
+    u_int16_t flags;
+    u_int16_t num_questions;
+    u_int16_t num_answers;
+    u_int16_t num_authorities;
+    u_int16_t num_additionals;
+} dns_header;
+
+typedef struct dns_question
+{
+    char *name; // cast?
+    u_int16_t type;   // set to 1 for some reason
+    u_int16_t class;  // set to 1 for interent
+} dns_question;
+
+dns_header *new_header(u_int16_t id, u_int16_t flags, u_int16_t num_questions)
+{
+    dns_header *header = calloc(1, sizeof(dns_header));
+    header->id = id;
+    header->flags = flags;
+    header->num_questions = num_questions;
+    return header;
+};
+
+dns_question *new_question(char *name)
+{
+    dns_question *question = calloc(1, sizeof(dns_question));
+    question->name = malloc(strlen(name) + 1);
+    strcpy(question->name, name);
+    question->class = 1;
+    question->type = 1;
+    return question;
+}
+
+// def encode_dns_name(domain_name):
+//     encoded = b""
+//     for part in domain_name.encode("ascii").split(b"."):
+//         encoded += bytes([len(part)]) + part
+//     return encoded + b"\x00"
+
+int encode_dns_name(char *domain_name, char *res)
+{
+    char *token;
+    int name_len = strlen(domain_name);
+    int j = 0;
+    while ((token = strsep(&domain_name, ".")))
+    {
+        res[j++] = strlen(token);
+        strcpy(res + j, token);
+        j += strlen(token);
+    }
+    res[j] = '\0';
+    return j + 1;
+}
+
+// char* build_query()
+// {
+// }
+
 uint32_t ipv4_to_int(char *ip)
 {
     uint32_t result;
-    int i, j, left, right, res[4];
+    u_int16_t i, j, left, right, res[4];
     char tmp[4] = "";
 
     // "1.8.23.0"
@@ -66,17 +127,21 @@ int sendall(int s, char *buf, int *len, struct sockaddr_in dest)
     int bytesleft = *len; // how many we have left to send
     int n;
 
-    while(total < *len) {
-        n = sendto(s, buf+total, bytesleft, 0, (struct sockaddr*) &dest, sizeof(dest));
-        if (n == -1) { break; }
+    while (total < *len)
+    {
+        n = sendto(s, buf + total, bytesleft, 0, (struct sockaddr *)&dest, sizeof(dest));
+        if (n == -1)
+        {
+            break;
+        }
         total += n;
         bytesleft -= n;
     }
 
     *len = total; // return number actually sent here
 
-    return n==-1?-1:0; // return -1 on failure, 0 on success
-} 
+    return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
+}
 
 int main(int argc, char **argv)
 {
@@ -90,7 +155,7 @@ int main(int argc, char **argv)
     dest.sin_addr.s_addr = htonl(0x08080404); // 8.8.4.4
     dest.sin_family = AF_INET;
     // open socket
-    sockfd = socket(PF_INET, SOCK_DGRAM, 0);
+    // sockfd = socket(PF_INET, SOCK_DGRAM, 0);
     // char query[] = "D" "\xcb\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07" "example" "\x03" "com" "\x00\x00\x01\x00\x01";
     char query[] = "\x44\xcb\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07\x65\x78\x61\x6d\x70\x6c\x65\x03\x63\x6f\x6d\x00\x00\x01\x00\x01";
 
@@ -103,13 +168,18 @@ int main(int argc, char **argv)
     // maybe fixes our problem?
     int query_len = sizeof(query) / sizeof(char);
     int sendall_len = query_len;
-    if (sendall(sockfd, query, &sendall_len, dest) == -1) {
-        printf("bad sendall");
-        return 1;
-    }
-    printf("num of bytes sent: %d\n", sendall_len);
-    assert(sendall_len == query_len);
+    // if (sendall(sockfd, query, &sendall_len, dest) == -1)
+    // {
+    //     printf("bad sendall");
+    //     return 1;
+    // }
+    // printf("num of bytes sent: %d\n", sendall_len);
+    // assert(sendall_len == query_len);
 
+    char d_n[] = "www.example.org";
+    char encoded_d_n[100];
+    int res_len = encode_dns_name(d_n, encoded_d_n);
+    printf("res len %d\n", res_len);
     // st = sendto(sockfd, query, strlen(query) + 1, 0, (struct sockaddr *)&dest, sizeof dest);
     // if (st == -1)
     // {
@@ -117,14 +187,14 @@ int main(int argc, char **argv)
     // }
     // printf("num of bytes sent: %d\n", st);
 
-    rf = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr *)&store, &len);
-    if (rf == -1)
-    {
-        perror("recvfrom");
-    }
-    printf("from recvfrom %d\n", rf);
-    printf("buf dude: %s\n", buf);
-    close(sockfd);
+    // rf = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr *)&store, &len);
+    // if (rf == -1)
+    // {
+    //     perror("recvfrom");
+    // }
+    // printf("from recvfrom %d\n", rf);
+    // printf("buf dude: %s\n", buf);
+    // close(sockfd);
     // connect to it
     // connect(sockfd,
     //
