@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <errno.h>
+#include <assert.h>
 
 uint32_t ipv4_to_int(char *ip)
 {
@@ -59,15 +60,14 @@ uint32_t btoi(char *binstr)
     return result;
 }
 
-
-int sendall(int s, char *buf, int *len)
+int sendall(int s, char *buf, int *len, struct sockaddr_in dest)
 {
     int total = 0;        // how many bytes we've sent
     int bytesleft = *len; // how many we have left to send
     int n;
 
     while(total < *len) {
-        n = send(s, buf+total, bytesleft, 0);
+        n = sendto(s, buf+total, bytesleft, 0, (struct sockaddr*) &dest, sizeof(dest));
         if (n == -1) { break; }
         total += n;
         bytesleft -= n;
@@ -86,25 +86,43 @@ int main(int argc, char **argv)
     struct sockaddr_in dest;
     struct sockaddr_storage store;
     dest.sin_port = htons(53);
-    dest.sin_addr.s_addr = 134744072;
+    // dest.sin_addr.s_addr = 0x08080808; // 8.8.8.8
+    dest.sin_addr.s_addr = htonl(0x08080404); // 8.8.4.4
     dest.sin_family = AF_INET;
     // open socket
     sockfd = socket(PF_INET, SOCK_DGRAM, 0);
-    char *query = "D\xcb\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07example\x03com\x00\x00\x01\x00\x01";
+    // char query[] = "D" "\xcb\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07" "example" "\x03" "com" "\x00\x00\x01\x00\x01";
+    char query[] = "\x44\xcb\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07\x65\x78\x61\x6d\x70\x6c\x65\x03\x63\x6f\x6d\x00\x00\x01\x00\x01";
+
+    // for (int i = 0; i < sizeof(query); i++) {
+    //     printf("%hhx %hhu %c \n", query[i], query[i], query[i]);
+    // }
+
     int st, rf;
 
-    st = sendto(sockfd, query, strlen(query) + 1, 0, (struct sockaddr *)&dest, sizeof dest);
-    if (st == -1)
-    {
-        perror("sendto");
+    // maybe fixes our problem?
+    int query_len = sizeof(query) / sizeof(char);
+    int sendall_len = query_len;
+    if (sendall(sockfd, query, &sendall_len, dest) == -1) {
+        printf("bad sendall");
+        return 1;
     }
-    // rf = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr *)&store, &len);
-    // if (rf == -1)
+    printf("num of bytes sent: %d\n", sendall_len);
+    assert(sendall_len == query_len);
+
+    // st = sendto(sockfd, query, strlen(query) + 1, 0, (struct sockaddr *)&dest, sizeof dest);
+    // if (st == -1)
     // {
-    //     perror("recvfrom");
+    //     perror("sendto");
     // }
-    printf("num of bytes sent: %d\n", st);
-    // printf("from recvfrom %d\n", rf);
+    // printf("num of bytes sent: %d\n", st);
+
+    rf = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr *)&store, &len);
+    if (rf == -1)
+    {
+        perror("recvfrom");
+    }
+    printf("from recvfrom %d\n", rf);
     printf("buf dude: %s\n", buf);
     close(sockfd);
     // connect to it
