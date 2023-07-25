@@ -21,7 +21,7 @@ typedef struct dns_header
 
 typedef struct dns_question
 {
-    char *name; // cast?
+    char *encoded_name; // cast?
     u_int16_t type;   // set to 1 for some reason
     u_int16_t class;  // set to 1 for interent
 } dns_question;
@@ -35,11 +35,11 @@ dns_header *new_header(u_int16_t id, u_int16_t flags, u_int16_t num_questions)
     return header;
 };
 
-dns_question *new_question(char *name)
+dns_question *new_question(char *encoded_name)
 {
     dns_question *question = calloc(1, sizeof(dns_question));
-    question->name = malloc(strlen(name) + 1);
-    strcpy(question->name, name);
+    question->encoded_name = malloc(strlen(encoded_name) + 1);
+    strcpy(question->encoded_name, encoded_name);
     question->class = 1;
     question->type = 1;
     return question;
@@ -54,6 +54,12 @@ dns_question *new_question(char *name)
 int encode_dns_name(char *domain_name, char *res)
 {
     char *token;
+
+    // char *copy[name_len + 1];
+    // stpcpy(copy, domain_name);
+
+    // char *copy = strdup(first_thing)
+
     int name_len = strlen(domain_name);
     int j = 0;
     while ((token = strsep(&domain_name, ".")))
@@ -66,9 +72,18 @@ int encode_dns_name(char *domain_name, char *res)
     return j + 1;
 }
 
-// char* build_query()
-// {
-// }
+char* build_query(char *domain_name, int record_type)
+{
+  // encoded_result has space for initial count AND null terminator
+  // char encoded_result[strlen(domain_name)+2];
+  char encoded_result[100];
+  int encoded_len = encode_dns_name(domain_name, encoded_result);
+  printf("encoded_len %d\n", encoded_len);
+  printf("encoded_result %s\n", encoded_result);
+  // question
+  // concat/output
+  return 0;
+}
 
 uint32_t ipv4_to_int(char *ip)
 {
@@ -178,8 +193,15 @@ int main(int argc, char **argv)
 
     char d_n[] = "www.example.org";
     char encoded_d_n[100];
-    int res_len = encode_dns_name(d_n, encoded_d_n);
-    printf("res len %d\n", res_len);
+    // int res_len = encode_dns_name(d_n, encoded_d_n);
+    // printf("res len %d\n", res_len);
+    // printf("encoded_d_n %s\n", encoded_d_n);
+    //printf("%d\n", res_len);
+    //printf("%s\n", encoded_d_n);
+    //
+    // testing build_query
+    build_query(d_n, 0);
+    //
     // st = sendto(sockfd, query, strlen(query) + 1, 0, (struct sockaddr *)&dest, sizeof dest);
     // if (st == -1)
     // {
