@@ -4,24 +4,39 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+#define MAXLINE 100
+
+int get_line(char* line, int lim)
+{
+    int  i;
+    char c;
+
+    for (i=0; i<lim-1 && (c=getchar()) != EOF && c != '\n'; i++)
+        line[i] = c;
+    /*
+    if (c == '\n')
+        line[i++] = c;
+    */
+    line[i] = '\0';
+    return i;
+}
 
 int main() {
 
-    /*
-    char c, line[100];
-    int i = 0;
+    char line[MAXLINE];
+    int  cc;
+    struct sockaddr_in my_addr;
 
-    while ((c = getchar()) != EOF) {
-        if (c == '\n') {
-            line[i] = '\0';
-            printf("You entered: %s\n", line);
-            while (i > 0) { line[i--] = '\0'; }
-        } else {
-            line[i++] = c;
-        }
+
+    my_addr.sin_family = AF_INET;
+    my_addr.sin_port = htons(53);
+
+    while ((cc = get_line(line, MAXLINE)) > 0) {
+        if (inet_pton(AF_INET, line, &my_addr.sin_addr) == 1)
+            printf("%s: %d\n", line, my_addr.sin_addr.s_addr);
     }
-    */
-
+            
+    /*
     struct addrinfo hints, *res, *p;
     int status;
     char ipstr[INET6_ADDRSTRLEN];
@@ -61,6 +76,7 @@ int main() {
     }
 
     freeaddrinfo(res);
+    */
 
     return 0;
 }
