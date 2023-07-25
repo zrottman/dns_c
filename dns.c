@@ -53,16 +53,21 @@ dns_question *new_question(char *encoded_name)
 
 int encode_dns_name(char *domain_name, char *res)
 {
-    char *token;
-
-    // char *copy[name_len + 1];
-    // stpcpy(copy, domain_name);
-
-    // char *copy = strdup(first_thing)
-
-    int name_len = strlen(domain_name);
+    char *token, copy[100];
     int j = 0;
-    while ((token = strsep(&domain_name, ".")))
+    char *p = copy;
+
+    memset(copy, '\0', 100);
+    strcpy(copy, domain_name);
+    //printf("copy: %s/n", copy);
+
+    //char *copy = "www.example.com";
+
+
+    // char *copy = strdup(first_thing);    // <-- heap
+    // int name_len = strlen(domain_name);
+    
+    while ((token = strsep(&p, ".")))
     {
         res[j++] = strlen(token);
         strcpy(res + j, token);
@@ -72,23 +77,63 @@ int encode_dns_name(char *domain_name, char *res)
     return j + 1;
 }
 
+void header_to_bytes(dns_header *header, char *header_bytes) {
+
+    char *encoded = (char*)header;
+    
+    memcpy(header_bytes, encoded, sizeof *header);
+    /*
+    printf("header (size %lu):", sizeof *header);
+    for (int i=0; i<sizeof *header; ++i) {
+        header_bytes[i] = encoded[i];
+        printf("%c", encoded[i]);
+    }
+    printf("\n");
+    */
+
+}
+
 char* build_query(char *domain_name, int record_type)
 {
-  // encoded_result has space for initial count AND null terminator
-  // char encoded_result[strlen(domain_name)+2];
-  char encoded_result[100];
-  int encoded_len = encode_dns_name(domain_name, encoded_result);
-  printf("encoded_len %d\n", encoded_len);
-  printf("encoded_result %s\n", encoded_result);
-  // question
-  // concat/output
-  return 0;
+    dns_header   *header;
+    dns_question *question;
+    char          encoded_result[100];
+
+    question = new_question(encoded_result);
+    header = new_header(0, 1<<8, 1);
+
+    char header_bytes[sizeof *header];
+    char question_bytes[4 + strlen(question->encoded_name)];
+
+    // encoded_result has space for initial count AND null terminator
+    // char encoded_result[strlen(domain_name)+2];
+    int encoded_len = encode_dns_name(domain_name, encoded_result);
+    printf("encoded_len %d\n", encoded_len);
+    printf("encoded_result %s\n", encoded_result);
+    // question
+    // concat/output
+
+    // print header struct
+    header_to_bytes(header, header_bytes);
+
+    printf("header_bytes (size %lu):", sizeof header_bytes);
+    for (int i=0; i<sizeof header_bytes; ++i) {
+        printf("%c", header_bytes[i]);
+    }
+    printf("\n");
+    
+
+    // question_to_bytes(*question, *question_bytes)
+
+
+    
+    return 0;
 }
 
 uint32_t ipv4_to_int(char *ip)
 {
     uint32_t result;
-    u_int16_t i, j, left, right, res[4];
+    uint16_t i, j, left, right, res[4];
     char tmp[4] = "";
 
     // "1.8.23.0"
@@ -193,9 +238,9 @@ int main(int argc, char **argv)
 
     char d_n[] = "www.example.org";
     char encoded_d_n[100];
-    // int res_len = encode_dns_name(d_n, encoded_d_n);
-    // printf("res len %d\n", res_len);
-    // printf("encoded_d_n %s\n", encoded_d_n);
+    int res_len = encode_dns_name(d_n, encoded_d_n);
+    printf("res len %d\n", res_len);
+    printf("encoded_d_n %s\n", encoded_d_n);
     //printf("%d\n", res_len);
     //printf("%s\n", encoded_d_n);
     //
