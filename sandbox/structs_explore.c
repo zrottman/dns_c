@@ -3,6 +3,7 @@
 #include <netdb.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <stdlib.h>
 
 #define MAXLINE 100
 
@@ -34,12 +35,12 @@ int main() {
     addr.sin_port   = htons(53);
 
     while ((cc = get_line(line, MAXLINE)) > 0) {
-        if (inet_pton(AF_INET, line, &(addr.sin_addr)) == 1) { // valid IP address format
-            printf("%s --> %d\n", line, ntohl(addr.sin_addr.s_addr));
-        } else { // invalid IP address format
+        if (inet_pton(AF_INET, line, &(addr.sin_addr)) != 1) { // invalid IP address format
             printf("Invalid IP address format: %s\n", line);
+            exit(1);
         }
 
+        printf("%s --> %d\n", line, ntohl(addr.sin_addr.s_addr));
     }
 
     return 0;
