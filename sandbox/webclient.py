@@ -18,6 +18,8 @@ s = socket.socket()
 # connect
 s.connect((host, port))
 
+print("Connecting to {}".format(socket.gethostbyname(host)))
+
 # build request
 request = "GET / HTTP/1.1\r\nHOST: {}\r\n\r\n".format(host)
 request = request.encode("ISO-8859-1")
