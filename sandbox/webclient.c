@@ -27,6 +27,7 @@ int main(int argc, char **argv)
     char     *request = "GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n";
     char                buf[MAXDATASIZE];
 
+    // TODO: Fix request so that URL is not hard coded
 
     port = argv[2];
     hostname = argv[1];
@@ -65,14 +66,14 @@ int main(int argc, char **argv)
     }
     
     inet_ntop(p->ai_family, &((struct sockaddr_in *)p->ai_addr)->sin_addr, ipstr, sizeof ipstr);
-    printf("client: connected to: %s on port %d\n", ipstr, ntohs(((struct sockaddr_in *)p->ai_addr)->sin_port));
-    printf("socktype: %d (SOCK_STREAM = %d)\n", p->ai_socktype, SOCK_STREAM);
+    printf("Connected to %s on port %d\n\n", ipstr, ntohs(((struct sockaddr_in *)p->ai_addr)->sin_port));
+    //printf("socktype: %d (SOCK_STREAM = %d)\n", p->ai_socktype, SOCK_STREAM);
     freeaddrinfo(res);
 
     // send (or sendall using Beej implementation)
     bytes_sent = send(sockfd, request, strlen(request), 0);
-    printf("request sent (length %lu): %s\n", strlen(request), request);
-    printf("%d of %lu bytes sent\n", bytes_sent, strlen(request));
+    printf("Sending request:\n%s", request);
+    printf("%d of %lu bytes sent\n\n", bytes_sent, strlen(request));
     
     // recv several times to get all dta
     printf("Response:\n");
