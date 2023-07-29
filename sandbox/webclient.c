@@ -7,6 +7,20 @@
 #include <string.h>
 
 #define MAXDATASIZE 1000 
+#define MAXREQUESTSIZE 200
+
+// Function:    build_request
+// Description: Builds HTTP request header using hostname supplied as arg.
+// Arguments:   
+//              - host: hostname
+//              - buf:  output buffer
+// Returns:     void
+void build_request(char *host, char *buf)
+{
+    strcpy(buf, "GET / HTTP/1.1\r\nHOST: \0");
+    strcat(buf, host);
+    strcat(buf, "\r\nConnection: close\r\n\r\n");
+}
 
 int main(int argc, char **argv)
 {
@@ -24,17 +38,19 @@ int main(int argc, char **argv)
     char                *hostname;
     char                *port;
     char                ipstr[INET6_ADDRSTRLEN];
-    char     *request = "GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n";
+    char                request[MAXREQUESTSIZE];
     char                buf[MAXDATASIZE];
-
-    // TODO: Fix request so that URL is not hard coded
 
     port = argv[2];
     hostname = argv[1];
 
+    // configure hints
     memset(&hints, 0, sizeof hints); // initialize to 0
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
+
+    // build request
+    build_request(hostname, request);
 
     // use getaddrinfo to load up addrinfo struct
     if (getaddrinfo(hostname, port, &hints, &res) != 0) {
@@ -67,7 +83,6 @@ int main(int argc, char **argv)
     
     inet_ntop(p->ai_family, &((struct sockaddr_in *)p->ai_addr)->sin_addr, ipstr, sizeof ipstr);
     printf("Connected to %s on port %d\n\n", ipstr, ntohs(((struct sockaddr_in *)p->ai_addr)->sin_port));
-    //printf("socktype: %d (SOCK_STREAM = %d)\n", p->ai_socktype, SOCK_STREAM);
     freeaddrinfo(res);
 
     // send (or sendall using Beej implementation)
@@ -77,26 +92,17 @@ int main(int argc, char **argv)
     
     // recv several times to get all dta
     printf("Response:\n");
-    /*
-    bytes_received = recv(sockfd, buf, MAXDATASIZE-1, 0);
-    printf("%d bytes received\n", bytes_received);
-    printf("%s\n", buf);
-    */
     while ((bytes_received = recv(sockfd, buf, MAXDATASIZE-1, 0)) > 0) {
-        //printf("%d bytes received\n", bytes_received);
         buf[bytes_received] = '\0';
         printf("%s", buf);
     }
-
 
     if (bytes_received < 0) {
         perror("recv");
     }
    
-
     // close socket
     close(sockfd);
-
 
     return 0;
 }
