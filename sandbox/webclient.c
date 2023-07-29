@@ -61,13 +61,13 @@ int main(int argc, char **argv)
     // loop through results and try to connect
     for (p = res; p != NULL; p = p->ai_next) {
         // open socket
-        if ((sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1) {
+        if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
             perror("client: socket");
             continue;
         }
 
         // connect 
-        if (connect(sockfd, res->ai_addr, res->ai_addrlen) == -1) {
+        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
             close(sockfd);
             perror("client: connect");
             continue;
