@@ -15,18 +15,18 @@ sock.bind(('', port))
 # listen
 sock.listen()
 
-# accept
-new_sock, _ = sock.accept()
+# continue accepting connections
+while (new_sock := sock.accept()[0]):
 
-# receive request
-while (bytes_received := new_sock.recv(1000)):
-    print("response: {}\n".format(bytes_received.decode("ISO-8859-1")))
-    if bytes_received.decode("ISO-8859-1").endswith("\r\n\r\n"):
-        break    
-    
-# send response
-new_sock.send(response.encode("ISO-8859-1"))
+    # receive request
+    while (bytes_received := new_sock.recv(1000)):
+        print("request: {}\n".format(bytes_received.decode("ISO-8859-1")))
+        if bytes_received.decode("ISO-8859-1").endswith("\r\n\r\n"):
+            break    
+        
+    # send response
+    new_sock.send(response.encode("ISO-8859-1"))
 
-# close new_sock
-new_sock.close()
+    # close new_sock
+    new_sock.close()
 
