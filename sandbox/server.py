@@ -30,3 +30,4 @@ while (new_sock := sock.accept()[0]):
     # close new_sock
     new_sock.close()
 
+sock.close()
