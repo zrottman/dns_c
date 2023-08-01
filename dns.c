@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
+#include <arpa/inet.h>
 
 typedef struct dns_header
 {
@@ -29,9 +30,9 @@ typedef struct dns_question
 dns_header *new_header(u_int16_t id, u_int16_t flags, u_int16_t num_questions)
 {
     dns_header *header = calloc(1, sizeof(dns_header));
-    header->id = id;
-    header->flags = flags;
-    header->num_questions = num_questions;
+    header->id = htons(id);
+    header->flags = htons(flags);
+    header->num_questions = htons(num_questions);
     return header;
 };
 
@@ -40,8 +41,8 @@ dns_question *new_question(char *encoded_name)
     dns_question *question = calloc(1, sizeof(dns_question));
     question->encoded_name = malloc(strlen(encoded_name) + 1);
     strcpy(question->encoded_name, encoded_name);
-    question->class = 1;
-    question->type = 1;
+    question->class = htons(1);
+    question->type = htons(1);
     return question;
 }
 
@@ -78,32 +79,30 @@ int encode_dns_name(char *domain_name, char *res)
 }
 
 void header_to_bytes(dns_header *header, char *header_bytes) {
-
     char *encoded = (char*)header;
-    
     memcpy(header_bytes, encoded, sizeof *header);
-    /*
-    printf("header (size %lu):", sizeof *header);
-    for (int i=0; i<sizeof *header; ++i) {
-        header_bytes[i] = encoded[i];
-        printf("%c", encoded[i]);
-    }
-    printf("\n");
-    */
+}
 
+void question_to_bytes(dns_question *question, char *question_bytes) {
+    char *p;
+
+    strcpy(question_bytes, question->encoded_name);
+
+    p = question_bytes + strlen(question->encoded_name) + 1;
+    memcpy(p, &(question->type), sizeof question->type);
+
+    p += sizeof question->type;
+    memcpy(p, &(question->class), sizeof question->class);
 }
 
 char* build_query(char *domain_name, int record_type)
 {
     dns_header   *header;
     dns_question *question;
-    char          encoded_result[100];
+    char          encoded_result[100] = {0};
 
-    question = new_question(encoded_result);
-    header = new_header(0, 1<<8, 1);
+    // TODO: Do this next: concatenate header_bytes and question_bytes and send it off!
 
-    char header_bytes[sizeof *header];
-    char question_bytes[4 + strlen(question->encoded_name)];
 
     // encoded_result has space for initial count AND null terminator
     // char encoded_result[strlen(domain_name)+2];
@@ -113,6 +112,14 @@ char* build_query(char *domain_name, int record_type)
     // question
     // concat/output
 
+
+    header = new_header(0, 1<<8, 1);
+    question = new_question(encoded_result);
+
+    char header_bytes[sizeof *header];
+    char question_bytes[4 + strlen(question->encoded_name) + 1];
+    //char question_bytes[100];
+    
     // print header struct
     header_to_bytes(header, header_bytes);
 
@@ -123,8 +130,14 @@ char* build_query(char *domain_name, int record_type)
     printf("\n");
     
 
-    // question_to_bytes(*question, *question_bytes)
+    // print question struct
+    question_to_bytes(question, question_bytes);
 
+    printf("question_bytes (size %lu):", sizeof question_bytes);
+    for (int i=0; i<sizeof question_bytes; ++i) {
+        printf("%c", question_bytes[i]);
+    }
+    printf("\n");
 
     
     return 0;
