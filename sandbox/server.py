@@ -1,4 +1,3 @@
-
 import socket
 
 response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 6\r\nConnection: close\r\n\r\nHello!\r\n\r\n"
@@ -10,11 +9,10 @@ sock = socket.socket()
 # bind to (address, port) -- localHost = "" ?
 sock.bind(('', port))
 
-#to do: loop to accept new request
-
 # listen
 sock.listen()
 
+# TODO: exit loop on key press
 # continue accepting connections
 while (new_sock := sock.accept()[0]):
 
