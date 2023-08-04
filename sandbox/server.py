@@ -1,5 +1,28 @@
 import socket, os
+from dataclasses import dataclass
 
+@dataclass
+class Response:
+    header: str
+    content_type: str
+    content_length: str
+    connection: str
+    payload: str
+
+    def encode(self) -> bytes:
+        to_encode = [
+                self.header,
+                self.content_type,
+                self.content_length,
+                self.connection,
+                "",
+                self.payload,
+                ""
+                ]
+        return "\r\n".join(to_encode).encode("ISO-8859-1")
+    
+def encode_response(response):
+    pass
 
 def build_response(filename):
 
@@ -25,7 +48,15 @@ def build_response(filename):
                 ""
                 ]
         response = "\r\n".join(response)
-        return response.encode("ISO-8859-1")
+        response = Response(
+                header="HTTP/1.1 404 Not Found", 
+                content_type="Content-Type: text/plain",
+                content_length="Content-Length: 13",
+                connection="Connection: close",
+                payload="404 not found",
+                )
+        return response.encode()
+        #return response.encode("ISO-8859-1")
 
     _, ext = os.path.splitext(filename)
 
@@ -42,6 +73,32 @@ def build_response(filename):
     response = "\r\n".join(response)
 
     return response.encode("ISO-8859-1")
+
+
+def get_request(new_sock):
+
+    request_chunks = []
+
+    while (bytes_received := new_sock.recv(1000)):
+        received = bytes_received.decode("ISO-8859-1")
+        print("request: {}\n".format(received))
+        request_chunks.append(received)
+        if received.endswith("\r\n\r\n"):
+            break    
+
+    return ''.join(request_chunks)
+
+
+def parse_request(r):
+
+    # split lines
+    lines = r.split('\r\n')
+
+    # get requested file
+    path = lines[0].split(' ')[1]        # we only need path for now
+    filename = os.path.split(path)[1]    # we only want the filename
+
+    return filename
 
 
 if __name__ == "__main__":
@@ -75,29 +132,19 @@ if __name__ == "__main__":
         new_sock.close()
     '''
 
+    # connect to client
     new_sock = sock.accept()[0]
 
-    request_chunks = []
+    # receive request from client
+    request = get_request(new_sock)
 
-    # receive request
-    while (bytes_received := new_sock.recv(1000)):
-        received = bytes_received.decode("ISO-8859-1")
-        print("request: {}\n".format(received))
-        request_chunks.append(received)
-        if received.endswith("\r\n\r\n"):
-            break    
-
-    # consolidate request chunks and split lines
-    lines = ''.join(request_chunks).split('\r\n')
-
-    # get requested file
-    path = lines[0].split(' ')[1]        # we only need path for now
-    _, filename, _ = os.path.split(path) # we only want the filename
+    # parse client request
+    filename = parse_request(request)
 
     # build response
     encoded_response = build_response(filename)
 
-    # send response
+    # send response to client
     new_sock.send(encoded_response)
 
     # close new_sock
@@ -105,11 +152,3 @@ if __name__ == "__main__":
 
     # close sock
     sock.close()
-
-
-    print("Printing first line of request")
-    print(lines[0])
-
-    print("Requested path")
-    print(filename)
-
