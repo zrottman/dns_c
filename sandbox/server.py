@@ -36,16 +36,6 @@ def build_response(filename):
 
     except:
         # file not found, send 404
-        response = [
-                "HTTP/1.1 404 Not Found", 
-                "Content-Type: text/plain",
-                "Content-Length: 13",
-                "Connection: close",
-                "",
-                "404 not found",
-                ""
-                ]
-        response = "\r\n".join(response)
         response = Response(
                 header="HTTP/1.1 404 Not Found", 
                 content_type="Content-Type: text/plain",
@@ -54,23 +44,18 @@ def build_response(filename):
                 payload="404 not found",
                 )
         return response.encode()
-        #return response.encode("ISO-8859-1")
 
     _, ext = os.path.splitext(filename)
 
-    response = [
-            "HTTP/1.1 200 OK",
-            "Content-Type: {}".format(content_type.get(ext, "DEFAULT")), # replace default val
-            "Content-Length: {}".format(datalength),
-            "Connection: close",
-            "",
-            data,
-            ""
-            ]
+    response = Response( 
+            header="HTTP/1.1 200 OK",
+            content_type="Content-Type: {}".format(content_type.get(ext, "DEFAULT")), # replace default val
+            content_length="Content-Length: {}".format(datalength),
+            connection="Connection: close",
+            payload=data
+            )
 
-    response = "\r\n".join(response)
-
-    return response.encode("ISO-8859-1")
+    return response.encode()
 
 
 def get_request(new_sock):
