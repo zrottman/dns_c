@@ -1,4 +1,4 @@
-import socket, os
+import socket, os, typing
 from dataclasses import dataclass
 
 @dataclass
@@ -22,7 +22,7 @@ class Response:
         return "\r\n".join(to_encode).encode("ISO-8859-1")
     
 
-def build_response(filename):
+def build_response(filename: str) -> bytes:
 
     content_type = {
             "txt": "text/plain",
@@ -58,7 +58,7 @@ def build_response(filename):
     return response.encode()
 
 
-def get_request(new_sock):
+def get_request(new_sock: socket.socket) -> str:
 
     request_chunks = []
 
@@ -72,7 +72,7 @@ def get_request(new_sock):
     return ''.join(request_chunks)
 
 
-def parse_request(r):
+def parse_request(r: str) -> str:
 
     # split lines
     lines = r.split('\r\n')
