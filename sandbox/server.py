@@ -10,9 +10,11 @@ class Response:
     content_length: str = "Content-Length: "
 
     def __post_init__(self):
+        """ Compute content_length """
         self.content_length += str(len(self.payload.encode("ISO-8859-1")))
 
     def encode(self) -> bytes:
+        """ Encode class attributes as ISO-8859-1 """
         to_encode = [
                 self.header,
                 self.content_type,
@@ -27,33 +29,35 @@ class Response:
 
 def build_response(filename: str) -> bytes:
 
-    content_type = {
-            "txt": "text/plain",
-            "html": "text/html"
-            }
-
     try:
         with open(filename) as fp:
             data = fp.read()
-        #datalength = len(data.encode("ISO-8859-1"))
-
     except:
         # file not found, send 404
         response = Response(
                 header="HTTP/1.1 404 Not Found", 
                 content_type="Content-Type: text/plain",
-                #content_length="Content-Length: 13",
                 connection="Connection: close",
                 payload="404 not found",
                 )
         return response.encode()
 
+    # get file ext
     _, ext = os.path.splitext(filename)
 
+    content_type = {
+            ".txt" : "text/plain",
+            ".html": "text/html",
+            ".pdf" : "application/pdf",
+            ".jpeg": "image/jpeg",
+            ".jpg" : "image/jpeg",
+            ".gif" : "image/gif",
+            }
+
+    # create response object
     response = Response( 
             header="HTTP/1.1 200 OK",
-            content_type="Content-Type: {}".format(content_type.get(ext, "DEFAULT")), # replace default val
-            #content_length="Content-Length: {}".format(datalength),
+            content_type="Content-Type: {}".format(content_type.get(ext, "application/octet-stream")),
             connection="Connection: close",
             payload=data
             )
