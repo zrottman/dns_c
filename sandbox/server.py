@@ -3,42 +3,43 @@ from dataclasses import dataclass
 
 @dataclass
 class Response:
-    header: str
-    content_type: str
-    connection: str
-    payload: str
-    content_length: str = "Content-Length: "
+    header: bytes
+    content_type: bytes
+    connection: bytes
+    payload: bytes
+    #content_length: bytes = b"Content-Length: "
 
     def __post_init__(self):
         """ Compute content_length """
-        self.content_length += str(len(self.payload.encode("ISO-8859-1")))
+        self.content_length = bytes("Content-Lenght: {}".format(str(len(self.payload) + 4)), "ISO-8859-1")
 
     def encode(self) -> bytes:
         """ Encode class attributes as ISO-8859-1 """
-        to_encode = [
+        response = [
                 self.header,
                 self.content_type,
                 self.content_length,
                 self.connection,
-                "",
+                b"",
                 self.payload,
-                ""
+                b"",
+                b""
                 ]
-        return "\r\n".join(to_encode).encode("ISO-8859-1")
-    
+
+        return b"\r\n".join(response)
 
 def build_response(filename: str) -> bytes:
 
     try:
-        with open(filename) as fp:
-            data = fp.read()
+        with open(filename, "rb") as fp:
+            data = bytearray(fp.read())
     except:
         # file not found, send 404
         response = Response(
-                header="HTTP/1.1 404 Not Found", 
-                content_type="Content-Type: text/plain",
-                connection="Connection: close",
-                payload="404 not found",
+                header=b"HTTP/1.1 404 Not Found", 
+                content_type=b"Content-Type: text/plain",
+                connection=b"Connection: close",
+                payload=b"404 not found",
                 )
         return response.encode()
 
@@ -56,9 +57,9 @@ def build_response(filename: str) -> bytes:
 
     # create response object
     response = Response( 
-            header="HTTP/1.1 200 OK",
-            content_type="Content-Type: {}".format(content_type.get(ext, "application/octet-stream")),
-            connection="Connection: close",
+            header=b"HTTP/1.1 200 OK",
+            content_type=bytes("Content-Type: {}".format(content_type.get(ext, "application/octet-stream")), "ISO-8859-1"),
+            connection=b"Connection: close",
             payload=data
             )
 
@@ -142,7 +143,3 @@ if __name__ == "__main__":
 
     # close sock
     sock.close()
-
-    # print response
-    print("Response sent:")
-    print(encoded_response.decode("ISO-8859-1"))
