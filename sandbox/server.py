@@ -21,8 +21,6 @@ class Response:
                 ]
         return "\r\n".join(to_encode).encode("ISO-8859-1")
     
-def encode_response(response):
-    pass
 
 def build_response(filename):
 
