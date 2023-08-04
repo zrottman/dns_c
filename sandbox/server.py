@@ -138,3 +138,7 @@ if __name__ == "__main__":
 
     # close sock
     sock.close()
+
+    # print response
+    print("Response sent:")
+    print(encoded_response.decode("ISO-8859-1"))
