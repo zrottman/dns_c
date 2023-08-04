@@ -1,6 +1,17 @@
 import socket
 
-response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 6\r\nConnection: close\r\n\r\nHello!\r\n\r\n"
+response = [
+        "HTTP/1.1 200 OK",
+        "Content-Type: text/plain",
+        "Content-Length: 10",
+        "Connection: close",
+        "",
+        "Hello!",
+        ""
+        ]
+
+response = "\r\n".join(response)
+
 port = 28333
 
 # open a socket
