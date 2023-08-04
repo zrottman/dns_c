@@ -5,9 +5,12 @@ from dataclasses import dataclass
 class Response:
     header: str
     content_type: str
-    content_length: str
     connection: str
     payload: str
+    content_length: str = "Content-Length: "
+
+    def __post_init__(self):
+        self.content_length += str(len(self.payload.encode("ISO-8859-1")))
 
     def encode(self) -> bytes:
         to_encode = [
@@ -32,14 +35,14 @@ def build_response(filename: str) -> bytes:
     try:
         with open(filename) as fp:
             data = fp.read()
-        datalength = len(data.encode("ISO-8859-1"))
+        #datalength = len(data.encode("ISO-8859-1"))
 
     except:
         # file not found, send 404
         response = Response(
                 header="HTTP/1.1 404 Not Found", 
                 content_type="Content-Type: text/plain",
-                content_length="Content-Length: 13",
+                #content_length="Content-Length: 13",
                 connection="Connection: close",
                 payload="404 not found",
                 )
@@ -50,7 +53,7 @@ def build_response(filename: str) -> bytes:
     response = Response( 
             header="HTTP/1.1 200 OK",
             content_type="Content-Type: {}".format(content_type.get(ext, "DEFAULT")), # replace default val
-            content_length="Content-Length: {}".format(datalength),
+            #content_length="Content-Length: {}".format(datalength),
             connection="Connection: close",
             payload=data
             )
