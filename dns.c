@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <arpa/inet.h>
 
-typedef struct query1
+typedef struct query
 {
 	size_t len;
 	char *s;
@@ -251,14 +251,15 @@ int main(int argc, char **argv)
     }
     printf("num of bytes sent: %ld\n", st);
 
-    // ssize_t rf = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr *)&store, &len);
-    // if (rf == -1)
-    // {
-    //     perror("recvfrom");
-    // }
-    // printf("from recvfrom %d\n", rf);
-    // printf("buf dude: %s\n", buf);
-    // close(sockfd);
+    ssize_t rf = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr *)&store, &len);
+    if (rf == -1)
+    {
+        perror("recvfrom");
+    }
+    /**** TO DO: PRINT STRUCT ****/ 
+    printf("from recvfrom %d\n", rf);
+    printf("buf dude: %s\n", buf);
+    close(sockfd);
     // connect to it
     // connect(sockfd,
     //
