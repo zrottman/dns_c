@@ -10,6 +10,12 @@
 #include <assert.h>
 #include <arpa/inet.h>
 
+typedef struct query1
+{
+	size_t len;
+	char *s;
+} query;
+
 typedef struct dns_header
 {
     u_int16_t id;
@@ -95,7 +101,7 @@ void question_to_bytes(dns_question *question, char *question_bytes) {
     memcpy(p, &(question->class), sizeof question->class);
 }
 
-char* build_query(char *domain_name, int record_type)
+query build_query(char *domain_name, int record_type)
 {
     dns_header   *header;
     dns_question *question;
@@ -118,29 +124,15 @@ char* build_query(char *domain_name, int record_type)
 
     char header_bytes[sizeof *header];
     char question_bytes[4 + strlen(question->encoded_name) + 1];
-    //char question_bytes[100];
-    
+
+    size_t query_len = sizeof(header_bytes) + sizeof(question_bytes);
+    char *query_string = malloc(query_len);
+    query full_query = { .len = query_len, .s = query_string };
+
     // print header struct
-    header_to_bytes(header, header_bytes);
-
-    printf("header_bytes (size %lu):", sizeof header_bytes);
-    for (int i=0; i<sizeof header_bytes; ++i) {
-        printf("%c", header_bytes[i]);
-    }
-    printf("\n");
-    
-
-    // print question struct
-    question_to_bytes(question, question_bytes);
-
-    printf("question_bytes (size %lu):", sizeof question_bytes);
-    for (int i=0; i<sizeof question_bytes; ++i) {
-        printf("%c", question_bytes[i]);
-    }
-    printf("\n");
-
-    
-    return 0;
+    header_to_bytes(header, full_query.s);
+    question_to_bytes(question, full_query.s + sizeof(header_bytes));
+    return full_query;
 }
 
 uint32_t ipv4_to_int(char *ip)
@@ -224,23 +216,15 @@ int main(int argc, char **argv)
     struct sockaddr_in dest;
     struct sockaddr_storage store;
     dest.sin_port = htons(53);
-    // dest.sin_addr.s_addr = 0x08080808; // 8.8.8.8
-    dest.sin_addr.s_addr = htonl(0x08080404); // 8.8.4.4
+    dest.sin_addr.s_addr = 0x08080808; // 8.8.8.8
+    // dest.sin_addr.s_addr = htonl(0x08080404); // 8.8.4.4
     dest.sin_family = AF_INET;
     // open socket
-    // sockfd = socket(PF_INET, SOCK_DGRAM, 0);
-    // char query[] = "D" "\xcb\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07" "example" "\x03" "com" "\x00\x00\x01\x00\x01";
-    char query[] = "\x44\xcb\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07\x65\x78\x61\x6d\x70\x6c\x65\x03\x63\x6f\x6d\x00\x00\x01\x00\x01";
-
-    // for (int i = 0; i < sizeof(query); i++) {
-    //     printf("%hhx %hhu %c \n", query[i], query[i], query[i]);
-    // }
-
-    int st, rf;
+    sockfd = socket(PF_INET, SOCK_DGRAM, 0);
 
     // maybe fixes our problem?
-    int query_len = sizeof(query) / sizeof(char);
-    int sendall_len = query_len;
+    // int query_len = sizeof(query) / sizeof(char);
+    // int sendall_len = query_len;
     // if (sendall(sockfd, query, &sendall_len, dest) == -1)
     // {
     //     printf("bad sendall");
@@ -258,16 +242,16 @@ int main(int argc, char **argv)
     //printf("%s\n", encoded_d_n);
     //
     // testing build_query
-    build_query(d_n, 0);
-    //
-    // st = sendto(sockfd, query, strlen(query) + 1, 0, (struct sockaddr *)&dest, sizeof dest);
-    // if (st == -1)
-    // {
-    //     perror("sendto");
-    // }
-    // printf("num of bytes sent: %d\n", st);
+    query full_query = build_query(d_n, 0);
+    
+    ssize_t st = sendto(sockfd, full_query.s, full_query.len, 0, (struct sockaddr *)&dest, sizeof dest);
+    if (st == -1)
+    {
+        perror("sendto");
+    }
+    printf("num of bytes sent: %ld\n", st);
 
-    // rf = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr *)&store, &len);
+    // ssize_t rf = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr *)&store, &len);
     // if (rf == -1)
     // {
     //     perror("recvfrom");
