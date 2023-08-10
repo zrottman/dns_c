@@ -40,7 +40,7 @@ Query NewDNSQuery(char *domain_name, int record_type)
     // build query
     size_t query_len    = sizeof(*header) + 4 + strlen(question->encoded_name) + 1;
     char*  query_string = malloc(query_len);
-    Query  full_query = { .len = query_len, .s = query_string };
+    Query  full_query   = { .len = query_len, .s = query_string };
     header_to_bytes(header, full_query.s);
     question_to_bytes(question, full_query.s + sizeof(*header));
 

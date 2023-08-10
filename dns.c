@@ -14,10 +14,10 @@
 int main(int argc, char **argv)
 {
     int                     sockfd;
-    socklen_t               len;
-    char                    buf[512];
     struct sockaddr_in      dest;
-    struct sockaddr_storage store;
+    char                    buf[512];
+    struct sockaddr_storage from;
+    socklen_t               fromlen;
 
     dest.sin_port = htons(53);
     dest.sin_addr.s_addr = 0x08080808; // 8.8.8.8
@@ -26,29 +26,24 @@ int main(int argc, char **argv)
     // open socket
     sockfd = socket(PF_INET, SOCK_DGRAM, 0);
 
-    // create Query
-    char* d_n = "www.example.org";
-    Query full_query = NewDNSQuery(d_n, 0);
+    // create query
+    Query query = NewDNSQuery("www.example.org", TYPE_A);
     
     // send query
-    ssize_t st = sendto(sockfd, full_query.s, full_query.len, 0, (struct sockaddr *)&dest, sizeof dest);
-    if (st == -1)
-    {
+    ssize_t bytes_sent = sendto(sockfd, query.s, query.len, 0, (struct sockaddr *)&dest, sizeof dest);
+    if (bytes_sent == -1)
         perror("sendto");
-    }
-    printf("bytes sent: %ld\n", st);
+    printf("bytes sent: %ld\n", bytes_sent);
 
     // receive result
-    ssize_t rf = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr *)&store, &len);
-    if (rf == -1)
-    {
+    ssize_t bytes_received = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr *)&from, &fromlen);
+    if (bytes_received == -1)
         perror("recvfrom");
-    }
 
     // print result
-    printf("bytes received: %zd\n", rf);
-    printf("response: ", buf);
-    for (int i=0; i<rf; ++i)
+    printf("Bytes received: %zd\n", bytes_received);
+    printf("Response: ");
+    for (int i=0; i<bytes_received; ++i)
         printf("%c", buf[i]);
     printf("\n");
 

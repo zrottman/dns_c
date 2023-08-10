@@ -25,8 +25,8 @@ typedef struct DNSHeader
 typedef struct DNSQuestion
 {
     char      *encoded_name;
-    u_int16_t type;   // set to 1 for some reason
-    u_int16_t class;  // set to 1 for internet
+    u_int16_t type;   // set to TYPE_A=1 (A Record?)
+    u_int16_t class;  // set to CLASS_IN=1 (for internet)
 } DNSQuestion;
 
 DNSHeader*   NewDNSHeader(u_int16_t id, u_int16_t flags, u_int16_t num_questions);
