@@ -47,6 +47,8 @@ Query NewDNSQuery(char *domain_name, int record_type)
     return full_query;
 }
 
+/* original version */
+/*
 size_t encode_dns_name(char *domain_name, char *res)
 {
     char* token;
@@ -68,6 +70,35 @@ size_t encode_dns_name(char *domain_name, char *res)
     }
     res[j] = '\0';
     return j + 1;
+}
+*/
+
+/* miccah version */
+size_t encode_dns_name(char *domain_name, char *res)
+{
+    int dni = strlen(domain_name);
+	// The result is shifted over by one, so set the null terminator.
+	res[dni + 1] = 0;
+
+	// Iterate in reverse, keeping track of the count of characters we see
+	// before encountering a separator. Start the loop by decrementing dni
+	// to skip the null terminator.
+	int count = 0;
+	for (--dni; dni >= 0; --dni) {
+		if (domain_name[dni] == '.') {
+			// Replace the separator with the count and reset.
+			res[dni + 1] = count;
+			count = 0;
+			continue;
+		}
+		// Shift the non-separator character over one.
+		res[dni + 1] = domain_name[dni];
+		count++;
+	}
+	// Set the last count.
+	res[0] = count;
+
+    return dni + 1;
 }
 
 void header_to_bytes(DNSHeader *header, char *header_bytes) {
