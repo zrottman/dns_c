@@ -1,14 +1,12 @@
-#include <sys/socket.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/types.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
-#include <unistd.h>
 #include <errno.h>
-#include <assert.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #include "request.h"
 
 int main(int argc, char **argv)
