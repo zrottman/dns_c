@@ -50,6 +50,6 @@ void         header_to_bytes(DNSHeader *header, char *header_bytes);
 void         question_to_bytes(DNSQuestion *question, char *question_bytes);
 size_t       parse_header(char* response_bytes, DNSHeader *header);
 void         display_DNSHeader(DNSHeader *header);
-char         *decode_name(DNSHeader* header, int bytes_in);
+int         decode_name(char* response_bytes, char *decoded_name, int bytes_in);
 
 #endif // REQUEST_H

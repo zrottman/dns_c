@@ -136,19 +136,28 @@ void display_DNSHeader(DNSHeader *header)
 
 }
 
-char *decode_name(char* response_bytes, int bytes_in)
+int decode_name(char* response_bytes, char *decoded_name, int bytes_in)
 {
     int name_bytes;
-    int i;
+    // char *decoded_name = calloc(100, 1);
+    // for(i=bytes_in;header[i] != 0; ++i)
+    //     ;
 
-    for(i=bytes_in;header[i] != 0; ++i)
-        ;
+    // char *decoded_name = calloc(i-bytes_in, 1);
 
-    char *decoded_name = calloc(i-bytes_in, 1);
+    int len = response_bytes[bytes_in];
+    int p;
+    for(++bytes_in, p = 0; response_bytes[bytes_in] != '\0'; ++bytes_in, ++p){
+        if (len == 0){
+            len = response_bytes[bytes_in];
+            decoded_name[p] = '.';
 
-    for(i=bytes_in+1; i<sizeof(decoded_name); ++i) {
-        if (response_bytes[i] >= 0 || response_bytes[i] <= 255)
+        } else {
+            decoded_name[p] = response_bytes[bytes_in];
+            len--;
+        }
+    }
 
-
+    return bytes_in + 1;
 }
 

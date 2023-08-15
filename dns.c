@@ -47,12 +47,10 @@ int main(int argc, char **argv)
 
     // close socket
     close(sockfd);
-
-    // TODO: PRINT STRUCT
+    char decoded_name[100];
     DNSHeader *responseheader = calloc(1, sizeof(DNSHeader));
     int bytes_read = parse_header(buf, responseheader);
-
+    bytes_read = decode_name(buf, decoded_name, bytes_read);
     display_DNSHeader(responseheader);
-
     return 0;
 }
