@@ -2,6 +2,7 @@
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 #include "request.h"
 
 DNSHeader* NewDNSHeader(u_int16_t id, u_int16_t flags, u_int16_t num_questions)
@@ -116,5 +117,38 @@ void question_to_bytes(DNSQuestion *question, char *question_bytes) {
 
     p += sizeof question->type;
     memcpy(p, &(question->class), sizeof question->class);
+}
+
+size_t parse_header(char* response_bytes, DNSHeader *header)
+{
+    memcpy(header, response_bytes, sizeof(*header));
+    return 12; 
+}
+
+void display_DNSHeader(DNSHeader *header)
+{
+    printf("header->id: %d\n", ntohs(header->id));
+    printf("header->flags: %d\n", ntohs(header->flags));
+    printf("header->num_questions: %d\n", ntohs(header->num_questions));
+    printf("header->num_answers: %d\n", ntohs(header->num_answers));
+    printf("header->num_authorities: %d\n", ntohs(header->num_authorities));
+    printf("header->num_additionals: %d\n", ntohs(header->num_additionals));
+
+}
+
+char *decode_name(char* response_bytes, int bytes_in)
+{
+    int name_bytes;
+    int i;
+
+    for(i=bytes_in;header[i] != 0; ++i)
+        ;
+
+    char *decoded_name = calloc(i-bytes_in, 1);
+
+    for(i=bytes_in+1; i<sizeof(decoded_name); ++i) {
+        if (response_bytes[i] >= 0 || response_bytes[i] <= 255)
+
+
 }
 

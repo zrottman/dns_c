@@ -49,6 +49,10 @@ int main(int argc, char **argv)
     close(sockfd);
 
     // TODO: PRINT STRUCT
+    DNSHeader *responseheader = calloc(1, sizeof(DNSHeader));
+    int bytes_read = parse_header(buf, responseheader);
+
+    display_DNSHeader(responseheader);
 
     return 0;
 }
