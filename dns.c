@@ -11,6 +11,8 @@
 
 int main(int argc, char **argv)
 {
+
+    /* send request */
     int                     sockfd;
     struct sockaddr_in      dest;
     char                    buf[512];
@@ -49,20 +51,27 @@ int main(int argc, char **argv)
     close(sockfd);
     char decoded_name[100];
 
-    DNSHeader *responseheader = calloc(1, sizeof(DNSHeader));
-    int bytes_read = parse_header(buf, responseheader);
-    display_DNSHeader(responseheader);
-    
-    DNSQuestion *responsequestion = calloc(1, sizeof(DNSQuestion));
-    bytes_read = parse_question(responsequestion, buf, bytes_read);
-    display_DNSQuestion(responsequestion);
 
+
+    /* parse response */
+    DNSHeader   *header   = calloc(1, sizeof(DNSHeader));
+    DNSQuestion *question = calloc(1, sizeof(DNSQuestion));
+    DNSRecord   *record   = calloc(1, sizeof(DNSRecord));
+    int bytes_read;
+
+    bytes_read = parse_header(buf, header);                        // parse header
+    bytes_read = parse_question(question, buf, bytes_read);        // parse question
+    // bytes_read = parse_record(buf, responserecord, bytes_read); // parse record
+    
+    display_DNSHeader(header);
+    display_DNSQuestion(question);
+    // display_DNSRecord(record);
+
+    
+    // test decode_compressed_name
     int pointer = decode_compressed_name(buf, bytes_read);
     printf("decoded pointer: %hu\n", pointer);
 
-    //DNSRecord *responserecord = calloc(1, sizeof(DNSRecord));
-    //bytes_read = parse_record(buf, responserecord, bytes_read);
 
-    //bytes_read = decode_name(buf, decoded_name, bytes_read);
     return 0;
 }

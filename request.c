@@ -144,22 +144,14 @@ void display_DNSQuestion(DNSQuestion *question)
 
 int decode_name(char* response_bytes, char *decoded_name, int bytes_in)
 {
-    // /03www07example03com -> www.example.com
-    //
     int name_bytes;
-    // char *decoded_name = calloc(100, 1);
-    // for(i=bytes_in;header[i] != 0; ++i)
-    //     ;
-
-    // char *decoded_name = calloc(i-bytes_in, 1);
-
     int len = response_bytes[bytes_in];
     int p;
+
     for(++bytes_in, p = 0; response_bytes[bytes_in] != '\0'; ++bytes_in, ++p){
         if (len == 0){
             len = response_bytes[bytes_in];
             decoded_name[p] = '.';
-
         } else {
             decoded_name[p] = response_bytes[bytes_in];
             len--;
