@@ -57,6 +57,9 @@ int main(int argc, char **argv)
     bytes_read = parse_question(responsequestion, buf, bytes_read);
     display_DNSQuestion(responsequestion);
 
+    int pointer = decode_compressed_name(buf, bytes_read);
+    printf("decoded pointer: %hu\n", pointer);
+
     //DNSRecord *responserecord = calloc(1, sizeof(DNSRecord));
     //bytes_read = parse_record(buf, responserecord, bytes_read);
 

@@ -45,13 +45,15 @@ DNSHeader*   NewDNSHeader(u_int16_t id, u_int16_t flags, u_int16_t num_questions
 DNSQuestion* NewDNSQuestion(char *encoded_name, int type, int class);
 Query        NewDNSQuery(char *domain_name, int record_type);
 
+void         display_DNSHeader(DNSHeader *header);
+void         display_DNSQuestion(DNSQuestion *question);
+
 size_t       encode_dns_name(char* domain_name, char* res);
 void         header_to_bytes(DNSHeader *header, char *header_bytes);
 void         question_to_bytes(DNSQuestion *question, char *question_bytes);
 size_t       parse_header(char* response_bytes, DNSHeader *header);
-void         display_DNSHeader(DNSHeader *header);
 int          decode_name(char* response_bytes, char *decoded_name, int bytes_in);
-int parse_question(DNSQuestion *question, char* response_bytes, int bytes_in);
-void display_DNSQuestion(DNSQuestion *question);
+int          parse_question(DNSQuestion *question, char* response_bytes, int bytes_in);
+int          decode_compressed_name(char* response_bytes, int bytes_in);
 
 #endif // REQUEST_H

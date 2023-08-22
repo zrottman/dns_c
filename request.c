@@ -181,3 +181,17 @@ int parse_question(DNSQuestion *question, char* response_bytes, int bytes_in)
 
     return bytes_in + 4;
 }
+
+int decode_compressed_name(char* response_bytes, int bytes_in)
+{
+    uint16_t pointer;
+
+    if ((0xc0 & response_bytes[bytes_in]) == 0xc0) {
+        pointer = (0xc0 ^ response_bytes[bytes_in]);
+        pointer <<= 8;
+        pointer |= response_bytes[++bytes_in];
+    }
+
+    return pointer;
+
+}
