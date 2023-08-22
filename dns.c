@@ -48,9 +48,18 @@ int main(int argc, char **argv)
     // close socket
     close(sockfd);
     char decoded_name[100];
+
     DNSHeader *responseheader = calloc(1, sizeof(DNSHeader));
     int bytes_read = parse_header(buf, responseheader);
-    bytes_read = decode_name(buf, decoded_name, bytes_read);
     display_DNSHeader(responseheader);
+    
+    DNSQuestion *responsequestion = calloc(1, sizeof(DNSQuestion));
+    bytes_read = parse_question(responsequestion, buf, bytes_read);
+    display_DNSQuestion(responsequestion);
+
+    //DNSRecord *responserecord = calloc(1, sizeof(DNSRecord));
+    //bytes_read = parse_record(buf, responserecord, bytes_read);
+
+    //bytes_read = decode_name(buf, decoded_name, bytes_read);
     return 0;
 }

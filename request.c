@@ -133,11 +133,19 @@ void display_DNSHeader(DNSHeader *header)
     printf("header->num_answers: %d\n", ntohs(header->num_answers));
     printf("header->num_authorities: %d\n", ntohs(header->num_authorities));
     printf("header->num_additionals: %d\n", ntohs(header->num_additionals));
+}
 
+void display_DNSQuestion(DNSQuestion *question)
+{
+    printf("question->encoded_name: %s\n", question->encoded_name);
+    printf("question->type: %d\n", ntohs(question->type));
+    printf("question->class: %d\n", ntohs(question->class));
 }
 
 int decode_name(char* response_bytes, char *decoded_name, int bytes_in)
 {
+    // /03www07example03com -> www.example.com
+    //
     int name_bytes;
     // char *decoded_name = calloc(100, 1);
     // for(i=bytes_in;header[i] != 0; ++i)
@@ -161,3 +169,15 @@ int decode_name(char* response_bytes, char *decoded_name, int bytes_in)
     return bytes_in + 1;
 }
 
+int parse_question(DNSQuestion *question, char* response_bytes, int bytes_in)
+{
+    char *decoded_name = malloc(strlen(response_bytes + bytes_in));
+
+    bytes_in = decode_name(response_bytes, decoded_name, bytes_in);
+
+    question->encoded_name = decoded_name;
+
+    memcpy((void*)question + sizeof(question->encoded_name), response_bytes + bytes_in, 4);
+
+    return bytes_in + 4;
+}
