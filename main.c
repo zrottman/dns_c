@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     
     // test decode_compressed_name
     int pointer = decode_compressed_name(buf, bytes_read);
-    printf("decoded pointer: %hu\n", pointer);
+    printf("decoded pointer: %d\n", pointer);
 
 
     return 0;
