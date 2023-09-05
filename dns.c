@@ -61,16 +61,16 @@ int main(int argc, char **argv)
 
     bytes_read = parse_header(buf, header);                        // parse header
     bytes_read = parse_question(question, buf, bytes_read);        // parse question
-    // bytes_read = parse_record(buf, responserecord, bytes_read); // parse record
+    bytes_read = parse_record(record, buf, bytes_read); // parse record
     
     display_DNSHeader(header);
     display_DNSQuestion(question);
-    // display_DNSRecord(record);
+    display_DNSRecord(record);
 
     
     // test decode_compressed_name
-    int pointer = decode_compressed_name(buf, bytes_read);
-    printf("decoded pointer: %hu\n", pointer);
+    // int pointer = decode_compressed_name(buf, bytes_read);
+    // printf("decoded pointer: %s\n", (char *)pointer);
 
 
     return 0;

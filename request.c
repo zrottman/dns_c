@@ -142,12 +142,35 @@ void display_DNSQuestion(DNSQuestion *question)
     printf("question->class: %d\n", ntohs(question->class));
 }
 
+void display_DNSRecord(DNSRecord *record)
+{
+    printf("record->name: %s\n", record->name);
+    printf("record->type: %d\n", ntohs(record->type));
+    printf("record->class: %d\n", ntohs(record->class));
+    printf("record->ttl %d\n", ntohl(record->ttl));
+    printf("record->data_len: %d\n", ntohs(record->data_len));
+    printf("record->data_bytes: ");
+    for (int i = 0; i < ntohs(record->data_len); i++){
+        printf("%x " , record->data_bytes[i]);
+    }
+    printf("\n");
+}
+
 int decode_name(char* response_bytes, char *decoded_name, int bytes_in)
 {
     int name_bytes;
     int len = response_bytes[bytes_in];
     int p;
-
+    if ((0xc0 & response_bytes[bytes_in]) == 0xc0){
+        return decode_compressed_name(response_bytes, bytes_in, decoded_name);
+    }
+    /* 3www7example3com\0 */
+    /*     ^            */
+    /* len = 7            */
+    /* p = 4            */
+    /* buff = www.        */
+    //NOTE: consider splitting this into its own function
+    //maybe call it "int split_domain(?????)"
     for(++bytes_in, p = 0; response_bytes[bytes_in] != '\0'; ++bytes_in, ++p){
         if (len == 0){
             len = response_bytes[bytes_in];
@@ -185,7 +208,6 @@ int parse_record(DNSRecord *record, char* response_bytes, int bytes_in)
     bytes_in += 10;
 
     int len = ntohs(record->data_len);
-    bytes_in += 2;
 
     uint8_t *data_bytes = malloc(len);
     memcpy(data_bytes, response_bytes + bytes_in, len);
@@ -194,7 +216,7 @@ int parse_record(DNSRecord *record, char* response_bytes, int bytes_in)
     return bytes_in + len;
 }
 
-int decode_compressed_name(char* response_bytes, int bytes_in) //, char* name)  TODO
+int decode_compressed_name(char* response_bytes, int bytes_in, char *decoded_name)
 {
     // hex c             0
     // bin 1   1   0 0   0 0 0 0
@@ -203,15 +225,13 @@ int decode_compressed_name(char* response_bytes, int bytes_in) //, char* name)  
     // 11xx_xxxx yyyy_yyyy
 
     uint16_t pointer;
+    pointer = (0xc0 ^ response_bytes[bytes_in]);
+    pointer <<= 8;
+    pointer |= response_bytes[bytes_in + 1];
 
-    if ((0xc0 & response_bytes[bytes_in]) == 0xc0) {
-        pointer = (0xc0 ^ response_bytes[bytes_in]);
-        pointer <<= 8;
-        pointer |= response_bytes[bytes_in + 1];
-    }
-
-    char *decoded_name = malloc(strlen(response_bytes + pointer)); // look for the NUL byte
+    // char *decoded_name = malloc(strlen(response_bytes + pointer)); // look for the NUL byte
     decode_name(response_bytes, decoded_name, pointer);
+
 
     return bytes_in + 2;
 }
