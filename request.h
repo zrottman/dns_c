@@ -37,8 +37,9 @@ typedef struct DNSRecord
     char     *name; // domain name
     uint16_t type;  // e.g., A record
     uint16_t class; // 1
-    uint16_t ttl;   // time to live
-    char     *data; // the record's content
+    uint32_t ttl;   // time to live
+    uint16_t data_len; // NOTE: net-byte-order!
+    uint8_t  *data_bytes; // the record's content
 } DNSRecord;
 
 DNSHeader*   NewDNSHeader(u_int16_t id, u_int16_t flags, u_int16_t num_questions);
