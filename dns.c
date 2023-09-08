@@ -56,29 +56,21 @@ int main(int argc, char **argv)
 
     // close socket
     close(sockfd);
-    char decoded_name[100];
 
-
-
-    /* parse response */
+    // parse response
     DNSHeader   *header   = calloc(1, sizeof(DNSHeader));
     DNSQuestion *question = calloc(1, sizeof(DNSQuestion));
     DNSRecord   *record   = calloc(1, sizeof(DNSRecord));
-    int bytes_read;
+    int          bytes_read;
 
-    bytes_read = parse_header(buf, header);                        // parse header
-    bytes_read = parse_question(question, buf, bytes_read);        // parse question
-    bytes_read = parse_record(record, buf, bytes_read); // parse record
+    bytes_read = parse_header(buf, header);                 // parse header
+    bytes_read = parse_question(question, buf, bytes_read); // parse question
+    bytes_read = parse_record(record, buf, bytes_read);     // parse record
     
+    // display structs
     display_DNSHeader(header);
     display_DNSQuestion(question);
     display_DNSRecord(record);
-
-    
-    // test decode_compressed_name
-    // int pointer = decode_compressed_name(buf, bytes_read);
-    // printf("decoded pointer: %s\n", (char *)pointer);
-
 
     return 0;
 }

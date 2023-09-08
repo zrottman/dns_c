@@ -26,7 +26,7 @@ DNSQuestion* NewDNSQuestion(char *encoded_name, int type, int class)
     return question;
 }
 
-Query NewDNSQuery(char *domain_name, int record_type)
+DNSQuery NewDNSQuery(char *domain_name, int record_type)
 {
     // create header
     int        id = 0; // TODO general random ID to pass to NewHeader()
@@ -41,40 +41,13 @@ Query NewDNSQuery(char *domain_name, int record_type)
     // build query
     size_t query_len    = sizeof(*header) + 4 + strlen(question->encoded_name) + 1;
     char*  query_string = malloc(query_len);
-    Query  full_query   = { .len = query_len, .s = query_string };
+    DNSQuery  full_query   = { .len = query_len, .s = query_string };
     header_to_bytes(header, full_query.s);
     question_to_bytes(question, full_query.s + sizeof(*header));
 
     return full_query;
 }
 
-/* original version */
-/*
-size_t encode_dns_name(char *domain_name, char *res)
-{
-    char* token;
-    char* p;
-    char copy[100];
-    int j;
-
-    j  = 0;
-    p = copy;
-
-    memset(copy, '\0', 100);
-    strcpy(copy, domain_name);
-    
-    while ((token = strsep(&p, ".")))
-    {
-        res[j++] = strlen(token);
-        strcpy(res + j, token);
-        j += strlen(token);
-    }
-    res[j] = '\0';
-    return j + 1;
-}
-*/
-
-/* miccah version */
 size_t encode_dns_name(char *domain_name, char *res)
 {
     int dni = strlen(domain_name);
@@ -161,16 +134,13 @@ int decode_name(char* response_bytes, char *decoded_name, int bytes_in)
     int name_bytes;
     int len = response_bytes[bytes_in];
     int p;
+
+    // look for compression flag
     if ((0xc0 & response_bytes[bytes_in]) == 0xc0){
         return decode_compressed_name(response_bytes, bytes_in, decoded_name);
     }
-    /* 3www7example3com\0 */
-    /*     ^            */
-    /* len = 7            */
-    /* p = 4            */
-    /* buff = www.        */
-    //NOTE: consider splitting this into its own function
-    //maybe call it "int split_domain(?????)"
+    // TODO: consider splitting this into its own function
+    //       maybe call it "int split_domain"
     for(++bytes_in, p = 0; response_bytes[bytes_in] != '\0'; ++bytes_in, ++p){
         if (len == 0){
             len = response_bytes[bytes_in];
@@ -186,7 +156,7 @@ int decode_name(char* response_bytes, char *decoded_name, int bytes_in)
 
 int parse_question(DNSQuestion *question, char* response_bytes, int bytes_in)
 {
-    char *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NUL byte
+    char *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NULL byte
 
     bytes_in = decode_name(response_bytes, decoded_name, bytes_in);
 
@@ -199,7 +169,10 @@ int parse_question(DNSQuestion *question, char* response_bytes, int bytes_in)
 
 int parse_record(DNSRecord *record, char* response_bytes, int bytes_in)
 {
-    char *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NUL byte
+    char    *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NULL byte
+    int      len = ntohs(record->data_len);
+    uint8_t *data_bytes = malloc(len);
+    
     bytes_in = decode_name(response_bytes, decoded_name, bytes_in);
 
     record->name = decoded_name;
@@ -207,9 +180,6 @@ int parse_record(DNSRecord *record, char* response_bytes, int bytes_in)
     memcpy((void*)record + sizeof(record->name), response_bytes + bytes_in, 10);
     bytes_in += 10;
 
-    int len = ntohs(record->data_len);
-
-    uint8_t *data_bytes = malloc(len);
     memcpy(data_bytes, response_bytes + bytes_in, len);
     record->data_bytes = data_bytes;
 
@@ -218,20 +188,13 @@ int parse_record(DNSRecord *record, char* response_bytes, int bytes_in)
 
 int decode_compressed_name(char* response_bytes, int bytes_in, char *decoded_name)
 {
-    // hex c             0
-    // bin 1   1   0 0   0 0 0 0
-    // dec 128 + 64
-
-    // 11xx_xxxx yyyy_yyyy
-
     uint16_t pointer;
+
     pointer = (0xc0 ^ response_bytes[bytes_in]);
     pointer <<= 8;
     pointer |= response_bytes[bytes_in + 1];
 
-    // char *decoded_name = malloc(strlen(response_bytes + pointer)); // look for the NUL byte
     decode_name(response_bytes, decoded_name, pointer);
-
 
     return bytes_in + 2;
 }
