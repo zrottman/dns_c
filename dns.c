@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     sockfd = socket(PF_INET, SOCK_DGRAM, 0);
 
     // create query
-    Query query = NewDNSQuery(argv[1], TYPE_A);
+    DNSQuery query = NewDNSQuery(argv[1], TYPE_A);
     
     // send query
     ssize_t bytes_sent = sendto(sockfd, query.s, query.len, 0, (struct sockaddr *)&dest, sizeof dest);
