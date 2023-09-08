@@ -23,11 +23,18 @@ int main(int argc, char **argv)
     dest.sin_addr.s_addr = 0x08080808; // 8.8.8.8
     dest.sin_family = AF_INET;
 
+
+    // validate argc
+    if (argc != 2) {
+        printf("Expected usage: ./dns <domain name>\n");
+        exit(1);
+    }
+
     // open socket
     sockfd = socket(PF_INET, SOCK_DGRAM, 0);
 
     // create query
-    Query query = NewDNSQuery("www.example.org", TYPE_A);
+    Query query = NewDNSQuery(argv[1], TYPE_A);
     
     // send query
     ssize_t bytes_sent = sendto(sockfd, query.s, query.len, 0, (struct sockaddr *)&dest, sizeof dest);
