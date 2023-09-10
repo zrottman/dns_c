@@ -40,7 +40,14 @@ int main(int argc, char **argv)
     ssize_t bytes_sent = sendto(sockfd, query.s, query.len, 0, (struct sockaddr *)&dest, sizeof dest);
     if (bytes_sent == -1)
         perror("sendto");
-    printf("bytes sent: %ld\n", bytes_sent);
+    printf("%ld bytes sent: \n", bytes_sent);
+    /*
+    for (int i=0; i<query.len; ++i) {
+        printf("%x/", query.s[i]);
+    }
+    */
+    printf("\n\n");
+
 
     // receive result
     ssize_t bytes_received = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr *)&from, &fromlen);
@@ -48,11 +55,15 @@ int main(int argc, char **argv)
         perror("recvfrom");
 
     // print result
-    printf("Bytes received: %zd\n", bytes_received);
-    printf("Response: ");
+    printf("%zd bytes received: \n", bytes_received);
+    /*
+    for (int i=0; i<bytes_received; ++i)
+        printf("%x/", buf[i]);
+    printf("\n\n");
+    */
     for (int i=0; i<bytes_received; ++i)
         printf("%c", buf[i]);
-    printf("\n");
+    printf("\n\n");
 
     // close socket
     close(sockfd);

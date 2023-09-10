@@ -100,23 +100,28 @@ size_t parse_header(char* response_bytes, DNSHeader *header)
 
 void display_DNSHeader(DNSHeader *header)
 {
+    printf("RESPONSE: HEADER\n");
     printf("header->id: %d\n", ntohs(header->id));
     printf("header->flags: %d\n", ntohs(header->flags));
     printf("header->num_questions: %d\n", ntohs(header->num_questions));
     printf("header->num_answers: %d\n", ntohs(header->num_answers));
     printf("header->num_authorities: %d\n", ntohs(header->num_authorities));
     printf("header->num_additionals: %d\n", ntohs(header->num_additionals));
+    printf("\n");
 }
 
 void display_DNSQuestion(DNSQuestion *question)
 {
+    printf("RESPONSE: QUESTION\n");
     printf("question->encoded_name: %s\n", question->encoded_name);
     printf("question->type: %d\n", ntohs(question->type));
     printf("question->class: %d\n", ntohs(question->class));
+    printf("\n");
 }
 
 void display_DNSRecord(DNSRecord *record)
 {
+    printf("RESPONSE: RECORD\n");
     printf("record->name: %s\n", record->name);
     printf("record->type: %d\n", ntohs(record->type));
     printf("record->class: %d\n", ntohs(record->class));
