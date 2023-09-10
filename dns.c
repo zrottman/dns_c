@@ -46,7 +46,6 @@ int main(int argc, char **argv)
     }
     printf("\n\n");
 
-
     // receive result
     ssize_t bytes_received = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr *)&from, &fromlen);
     if (bytes_received == -1)
@@ -57,13 +56,6 @@ int main(int argc, char **argv)
     for (int i=0; i<bytes_received; ++i)
         printf("%x/", (unsigned char)buf[i]);
     printf("\n\n");
-    
-    /*
-    for (int i=0; i<bytes_received; ++i)
-        printf("%c", buf[i]);
-    printf("\n\n");
-    */
-   
 
     // close socket
     close(sockfd);
