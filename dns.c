@@ -67,8 +67,8 @@ int main(int argc, char **argv)
     int          bytes_read;
 
     bytes_read = parse_header(buf, header);                 // parse header
-    bytes_read = parse_question(question, buf, bytes_read); // parse question
-    bytes_read = parse_record(record, buf, bytes_read);     // parse record
+    bytes_read = parse_question(buf, bytes_read, question); // parse question
+    bytes_read = parse_record(buf, bytes_read, record);     // parse record
     
     // display structs
     display_DNSHeader(header);
