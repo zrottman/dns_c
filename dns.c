@@ -55,13 +55,15 @@ int main(int argc, char **argv)
     // print result
     printf("%zd bytes received: \n", bytes_received);
     for (int i=0; i<bytes_received; ++i)
-        printf("%x/", (char)buf[i]);
+        printf("%x/", (unsigned char)buf[i]);
     printf("\n\n");
+    
     /*
     for (int i=0; i<bytes_received; ++i)
         printf("%c", buf[i]);
     printf("\n\n");
     */
+   
 
     // close socket
     close(sockfd);
