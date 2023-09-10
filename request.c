@@ -175,15 +175,16 @@ int parse_question(DNSQuestion *question, char* response_bytes, int bytes_in)
 int parse_record(DNSRecord *record, char* response_bytes, int bytes_in)
 {
     char    *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NULL byte
-    int      len = ntohs(record->data_len);
-    uint8_t *data_bytes = malloc(len);
-    
+                                                                       //
     bytes_in = decode_name(response_bytes, decoded_name, bytes_in);
 
     record->name = decoded_name;
 
     memcpy((void*)record + sizeof(record->name), response_bytes + bytes_in, 10);
     bytes_in += 10;
+
+    int      len = ntohs(record->data_len);
+    uint8_t *data_bytes = malloc(len);
 
     memcpy(data_bytes, response_bytes + bytes_in, len);
     record->data_bytes = data_bytes;
