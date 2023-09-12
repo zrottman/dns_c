@@ -62,18 +62,84 @@ int main(int argc, char **argv)
 
     // parse response
     DNSHeader   *header   = calloc(1, sizeof(DNSHeader));
-    DNSQuestion *question = calloc(1, sizeof(DNSQuestion));
-    DNSRecord   *record   = calloc(1, sizeof(DNSRecord));
+    DNSQuestion *questions_head   = NULL; // replace with: questions
+    DNSQuestion *questions_tail   = NULL;
+    DNSRecord   *answers_head     = NULL; // resplaace with: answers
+    DNSRecord   *answers_tail     = NULL;
+    /*
+    DNSRecord   *authorities_head = NULL;
+    DNSRecord   *authorities_tail = NULL;
+    DNSRecord   *additionals_head = NULL;
+    DNSRecord   *additionals_tail = NULL;
+    */
+    //DNSRecord   *record   = calloc(1, sizeof(DNSRecord));  // init record->next = NULL
     int          bytes_read;
 
-    bytes_read = parse_header(buf, header);                 // parse header
-    bytes_read = parse_question(question, buf, bytes_read); // parse question
-    bytes_read = parse_record(record, buf, bytes_read);     // parse record
+    // parse header
+    bytes_read = parse_header(buf, header);
+
+    // TODO:
+    // Generalize below parsing loops (but need to check for type -- DNSQuestion vs DNS Record):
+    //
+    // bytes_in = parse(ll_head, num loops, buf, bytes_read, response_type)
+    //
+    // enum response_type { QUESTION, ANSWER, AUTHORITY, ADDITIONAL };
+    //
+    // ** include a switch statement in parse function to determine correct struct to use based on response type
+    // ** allow generic parse function to handle tail management --> we don't need access to tail outside that func
+    // 
+    // bytes_in = parse(questions, ntohs(header->num_questions, buf, bytes_read, QUESTION)
+    // bytes_in = parse(answers, ntohs(header->num_answers, buf, bytes_read, ANSWER)
+    // bytes_in = parse(authorities, ntohs(header->num_authorities, buf, bytes_read, AUTHORITY)
+    // bytes_in = parse(additionals, ntohs(header->num_additionals, buf, bytes_read, ADDITIONAL)
     
+    // parse questions
+    for (int i=0; i < ntohs(header->num_questions); ++i) {
+        //printf("questions loop: %d\n", i);
+        
+        // malloc space for new question
+        DNSQuestion *cur_question = calloc(1, sizeof(DNSQuestion)); // init question->next = NULL
+                                                                     
+        // parse current question
+        bytes_read = parse_question(cur_question, buf, bytes_read); // parse question
+
+        // append cur question to end of questions linked list
+        if (questions_head == NULL) {
+            questions_head = questions_tail = cur_question;
+        } else {
+            questions_tail->next = cur_question;
+            questions_tail = questions_tail->next;
+        }
+    }
+
+    // parse answers
+    for (int i=0; i < ntohs(header->num_answers); ++i) {
+        
+        // malloc space for new answer
+        DNSRecord   *cur_answer = calloc(1, sizeof(DNSRecord));  // init record->next = NULL
+                                                                     
+        // parse current question
+        bytes_read = parse_record(cur_answer, buf, bytes_read);     // parse answer
+
+        // append cur question to end of questions linked list
+        if (answers_head == NULL) {
+            answers_head = answers_tail = cur_answer;
+        } else {
+            answers_tail->next = cur_answer;
+            answers_tail = answers_tail->next;
+        }
+    }
+
+    // parse additionals
+    
+    // parse authorities
+
     // display structs
     display_DNSHeader(header);
-    display_DNSQuestion(question);
-    display_DNSRecord(record);
+    display_DNSQuestion(questions_head);
+    display_DNSRecord(answers_head);
+    //display_DNSRecord(additionals_head);
+    //display_DNSRecord(authorities_head);
 
     return 0;
 }

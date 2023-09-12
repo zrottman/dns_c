@@ -6,6 +6,8 @@
 #define TYPE_A   1
 #define CLASS_IN 1
 
+// TODO: Consider defining structs in request.c but adding prototypes here, eg:
+// typedef struct DNSQuery DNSQuery;
 typedef struct DNSQuery
 {
 	size_t len;
@@ -26,20 +28,22 @@ typedef struct DNSHeader
 typedef struct DNSQuestion
 {
     // stored in network byte order
-    char      *encoded_name;
-    u_int16_t type;       // set to TYPE_A=1 (A Record)
-    u_int16_t class;      // set to CLASS_IN=1 (for internet)
+    char                *encoded_name;
+    u_int16_t           type;       // set to TYPE_A=1 (A Record)
+    u_int16_t           class;      // set to CLASS_IN=1 (for internet)
+    struct DNSQuestion *next;       // linked list next pointer
 } DNSQuestion;
 
 typedef struct DNSRecord
 {
     // stored in network byte order
-    char     *name;       // domain name
-    uint16_t type;        // e.g., A record
-    uint16_t class;       // 1
-    uint32_t ttl;         // time to live
-    uint16_t data_len;    // NOTE: net-byte-order!
-    uint8_t  *data_bytes; // the record's content
+    char             *name;        // domain name
+    uint16_t          type;        // e.g., A record
+    uint16_t          class;       // 1
+    uint32_t          ttl;         // time to live
+    uint16_t          data_len;    // NOTE: net-byte-order!
+    uint8_t          *data_bytes;  // the record's content
+    struct DNSRecord *next;        // linked list next pointer
 } DNSRecord;
 
 DNSHeader*   NewDNSHeader(u_int16_t id, u_int16_t flags, u_int16_t num_questions);
