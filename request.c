@@ -159,7 +159,7 @@ int parse_question(char* response_bytes, int bytes_in, DNSQuestion *question)
 {
     char *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NULL byte
 
-    bytes_in = decode_name(response_bytes, bytes_in, decoded_name);
+    bytes_in = decode_name(response_bytes, decoded_name, bytes_in);
 
     question->encoded_name = decoded_name;
 
@@ -178,9 +178,9 @@ int parse_question(char* response_bytes, int bytes_in, DNSQuestion *question)
 // Returns:    Count of number of bytes of response consumed from parsing
 int parse_record(char* response_bytes, int bytes_in, DNSRecord *record)
 {
-    char    *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NULL byte
-                                                                       //
-    bytes_in = decode_name(response_bytes, bytes_in, decoded_name);
+     char    *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NULL byte
+                                                                       
+    bytes_in = decode_name(response_bytes, decoded_name, bytes_in);
 
     record->name = decoded_name;
 
@@ -195,6 +195,7 @@ int parse_record(char* response_bytes, int bytes_in, DNSRecord *record)
 
     return bytes_in + len;
 }
+
 
 // Function:    decode_name
 // Description: Decodes domain name from response bytes from encoded format or
@@ -249,7 +250,7 @@ int decode_compressed_name(char* response_bytes, int bytes_in, char *decoded_nam
 
     return bytes_in + 2;
 }
-
+/* DISPLAY FUNCTIONS */
 void display_DNSHeader(DNSHeader *header)
 {
     printf("RESPONSE: HEADER\n");
@@ -259,29 +260,45 @@ void display_DNSHeader(DNSHeader *header)
     printf("header->num_answers: %d\n", ntohs(header->num_answers));
     printf("header->num_authorities: %d\n", ntohs(header->num_authorities));
     printf("header->num_additionals: %d\n", ntohs(header->num_additionals));
-    printf("\n");
+    printf("\n\n");
+
 }
 
 void display_DNSQuestion(DNSQuestion *question)
 {
-    printf("RESPONSE: QUESTION\n");
-    printf("question->encoded_name: %s\n", question->encoded_name);
-    printf("question->type: %d\n", ntohs(question->type));
-    printf("question->class: %d\n", ntohs(question->class));
-    printf("\n");
+    DNSQuestion *cur_question = question;
+    while (cur_question != NULL) {
+
+        printf("RESPONSE: QUESTION\n");
+        printf("cur_question->encoded_name: %s\n", cur_question->encoded_name);
+        printf("cur_question->type: %d\n", ntohs(cur_question->type));
+        printf("cur_question->class: %d\n", ntohs(cur_question->class));
+        printf("\n\n");
+        
+        cur_question = cur_question->next;
+    }
 }
 
 void display_DNSRecord(DNSRecord *record)
 {
-    printf("RESPONSE: RECORD\n");
-    printf("record->name: %s\n", record->name);
-    printf("record->type: %d\n", ntohs(record->type));
-    printf("record->class: %d\n", ntohs(record->class));
-    printf("record->ttl %d\n", ntohl(record->ttl));
-    printf("record->data_len: %d\n", ntohs(record->data_len));
-    printf("record->data_bytes: ");
-    for (int i = 0; i < ntohs(record->data_len); i++){
-        printf("%x " , record->data_bytes[i]);
+    DNSRecord *cur_record = record;
+    while (cur_record != NULL) {
+
+        printf("RESPONSE: RECORD\n");
+        printf("cur_record->name: %s\n", cur_record->name);
+        printf("cur_record->type: %d\n", ntohs(cur_record->type));
+        printf("cur_record->class: %d\n", ntohs(cur_record->class));
+        printf("cur_record->ttl %d\n", ntohl(cur_record->ttl));
+        printf("cur_record->data_len: %d\n", ntohs(cur_record->data_len));
+        printf("cur_record->data_bytes: ");
+
+        for (int i = 0; i < ntohs(cur_record->data_len); i++){
+            printf("%x " , cur_record->data_bytes[i]);
+        }
+        printf("\n\n");
+
+        cur_record = cur_record->next;
     }
-    printf("\n");
 }
+
+
