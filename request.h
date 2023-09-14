@@ -17,12 +17,12 @@ typedef struct DNSQuery
 typedef struct DNSHeader
 {
     // stored in network byte order
-    u_int16_t id;
-    u_int16_t flags;
-    u_int16_t num_questions;
-    u_int16_t num_answers;
-    u_int16_t num_authorities;
-    u_int16_t num_additionals;
+    uint16_t id;
+    uint16_t flags;
+    uint16_t num_questions;
+    uint16_t num_answers;
+    uint16_t num_authorities;
+    uint16_t num_additionals;
 } DNSHeader;
 
 typedef struct DNSQuestion
@@ -46,9 +46,9 @@ typedef struct DNSRecord
     struct DNSRecord *next;        // linked list next pointer
 } DNSRecord;
 
-DNSHeader*   NewDNSHeader(u_int16_t id, u_int16_t flags, u_int16_t num_questions);
-DNSQuestion* NewDNSQuestion(char *encoded_name, int type, int class);
-DNSQuery     NewDNSQuery(char *domain_name, int record_type);
+DNSHeader*   NewDNSHeader(uint16_t id, uint16_t flags, uint16_t num_questions);
+DNSQuestion* NewDNSQuestion(char *encoded_name, uint16_t type, uint16_t class);
+DNSQuery     NewDNSQuery(char *domain_name, uint16_t record_type);
 
 void         display_DNSHeader(DNSHeader *header);
 void         display_DNSQuestion(DNSQuestion *question);
@@ -58,9 +58,9 @@ size_t       encode_dns_name(char* domain_name, char* res);
 void         header_to_bytes(DNSHeader *header, char *header_bytes);
 void         question_to_bytes(DNSQuestion *question, char *question_bytes);
 size_t       parse_header(char* response_bytes, DNSHeader *header);
-int          parse_question(DNSQuestion *question, char* response_bytes, int bytes_in);
-int          parse_record(DNSRecord *record, char* response_bytes, int bytes_in);
-int          decode_name(char* response_bytes, char *decoded_name, int bytes_in);
+int          parse_question(char* response_bytes, int bytes_in, DNSQuestion *question);
+int          parse_record(char* response_bytes, int bytes_in, DNSRecord *record);
+int          decode_name(char* response_bytes, int bytes_in, char *decoded_name);
 int          decode_compressed_name(char* response_bytes, int bytes_in, char *decoded_name);
 
 #endif // REQUEST_H
