@@ -159,7 +159,7 @@ int parse_question(char* response_bytes, int bytes_in, DNSQuestion *question)
 {
     char *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NULL byte
 
-    bytes_in = decode_name(response_bytes, decoded_name, bytes_in);
+    bytes_in = decode_name(response_bytes, bytes_in, decoded_name);
 
     question->encoded_name = decoded_name;
 
@@ -180,7 +180,7 @@ int parse_record(char* response_bytes, int bytes_in, DNSRecord *record)
 {
      char    *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NULL byte
                                                                        
-    bytes_in = decode_name(response_bytes, decoded_name, bytes_in);
+    bytes_in = decode_name(response_bytes, bytes_in, decoded_name);
 
     record->name = decoded_name;
 
