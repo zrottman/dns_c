@@ -4,10 +4,17 @@
 # Unignore all files with extensions
 !*.*
 
+# Unignore makefile
+!makefile
+
 # Unignore all dirs
 !*/
 
+# Ignore .out
+*.out
+
+#Ignore object files
+*.o
+
 # Ignore tapes/ (for screen recording)
 tapes/
-
-# adding a meangingless comment to test whether I can merge after approval
