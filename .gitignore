@@ -12,3 +12,6 @@
 
 # Ignore .out
 *.out
+
+#Ignore object files
+*.o

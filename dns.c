@@ -104,7 +104,7 @@ int main(int argc, char **argv)
         DNSQuestion *cur_question = calloc(1, sizeof(DNSQuestion)); // init question->next = NULL
                                                                      
         // parse current question
-        bytes_read = parse_question(cur_question, buf, bytes_read); // parse question
+        bytes_read = parse_question(buf, bytes_read, cur_question); // parse question
 
         // append cur question to end of questions linked list
         if (questions_head == NULL) {
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
         DNSRecord   *cur_answer = calloc(1, sizeof(DNSRecord));  // init record->next = NULL
                                                                      
         // parse current question
-        bytes_read = parse_record(cur_answer, buf, bytes_read);     // parse answer
+        bytes_read = parse_record(buf, bytes_read, cur_answer);     // parse answer
 
         // append cur question to end of questions linked list
         if (answers_head == NULL) {
