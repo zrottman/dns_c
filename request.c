@@ -71,7 +71,88 @@ DNSQuery NewDNSQuery(char *domain_name, uint16_t record_type) // Change to DNSQu
 
 DNSPacket *NewDNSPacket(char *response_bytes) {
     DNSPacket *packet = calloc(1, sizeof(DNSPacket));
+
+    // parse response
+    DNSHeader   *header   = calloc(1, sizeof(DNSHeader));
+    DNSQuestion *questions_head   = NULL; // replace with: questions
+    DNSQuestion *questions_tail   = NULL;
+    DNSRecord   *answers_head     = NULL; // resplaace with: answers
+    DNSRecord   *answers_tail     = NULL;
+    /*
+    DNSRecord   *authorities_head = NULL;
+    DNSRecord   *authorities_tail = NULL;
+    DNSRecord   *additionals_head = NULL;
+    DNSRecord   *additionals_tail = NULL;
+    */
+    //DNSRecord   *record   = calloc(1, sizeof(DNSRecord));  // init record->next = NULL
+    int          bytes_read;
+
+    // parse header
+    bytes_read = parse_header(response_bytes, header);
+
+    // TODO:
+    // Generalize below parsing loops (but need to check for type -- DNSQuestion vs DNS Record):
+    //
+    // bytes_in = parse(ll_head, num loops, buf, bytes_read, response_type)
+    //
+    // enum response_type { QUESTION, ANSWER, AUTHORITY, ADDITIONAL };
+    //
+    // ** include a switch statement in parse function to determine correct struct to use based on response type
+    // ** allow generic parse function to handle tail management --> we don't need access to tail outside that func
+    // 
+    // bytes_in = parse(questions, ntohs(header->num_questions, buf, bytes_read, QUESTION)
+    // bytes_in = parse(answers, ntohs(header->num_answers, buf, bytes_read, ANSWER)
+    // bytes_in = parse(authorities, ntohs(header->num_authorities, buf, bytes_read, AUTHORITY)
+    // bytes_in = parse(additionals, ntohs(header->num_additionals, buf, bytes_read, ADDITIONAL)
     
+    // parse questions
+    for (int i=0; i < ntohs(header->num_questions); ++i) {
+        //printf("questions loop: %d\n", i);
+        
+        // malloc space for new question
+        DNSQuestion *cur_question = calloc(1, sizeof(DNSQuestion)); // init question->next = NULL
+                                                                     
+        // parse current question
+        bytes_read = parse_question(response_bytes, bytes_read, cur_question); // parse question
+
+        // append cur question to end of questions linked list
+        if (questions_head == NULL) {
+            questions_head = questions_tail = cur_question;
+        } else {
+            questions_tail->next = cur_question;
+            questions_tail = questions_tail->next;
+        }
+    }
+
+    // parse answers
+    for (int i=0; i < ntohs(header->num_answers); ++i) {
+        
+        // malloc space for new answer
+        DNSRecord   *cur_answer = calloc(1, sizeof(DNSRecord));  // init record->next = NULL
+                                                                     
+        // parse current question
+        bytes_read = parse_record(response_bytes, bytes_read, cur_answer);     // parse answer
+
+        // append cur question to end of questions linked list
+        if (answers_head == NULL) {
+            answers_head = answers_tail = cur_answer;
+        } else {
+            answers_tail->next = cur_answer;
+            answers_tail = answers_tail->next;
+        }
+    }
+
+    // parse additionals
+    
+    // parse authorities
+
+    // display structs
+    display_DNSHeader(header);
+    display_DNSQuestion(questions_head);
+    display_DNSRecord(answers_head);
+    //display_DNSRecord(additionals_head);
+    //display_DNSRecord(authorities_head);
+
     return packet;
 }
 
@@ -298,11 +379,20 @@ void display_DNSRecord(DNSRecord *record)
         printf("cur_record->data_len: %d\n", ntohs(cur_record->data_len));
         printf("cur_record->data_bytes: ");
 
-        for (int i = 0; i < ntohs(cur_record->data_len); i++){
-            printf("%x " , cur_record->data_bytes[i]);
+        uint32_t ipv4 = 0;
+        char ip[INET_ADDRSTRLEN];
+        
+        // Build IPv4 in Host Byte Order (why are the IP address bytes in host byte order?)
+        for (int i = 0; i < ntohs(cur_record->data_len); i++) {
+            ipv4 <<= 8;
+            ipv4 |= cur_record->data_bytes[i];
         }
-        printf("\n\n");
 
+        // Convert IPv4 address to Network Byte Order
+        ipv4 = htonl(ipv4);
+        inet_ntop(AF_INET, &ipv4, ip, INET_ADDRSTRLEN);
+
+        printf("%s\n" , ip);
         cur_record = cur_record->next;
     }
 }
