@@ -1,11 +1,11 @@
-dns : dns.o request.o
-	cc -o dns dns.o request.o
+dns : main.o dns.o
+	cc -o dns main.o dns.o
 
-dns.o : dns.c request.h
+main.o : main.c dns.h
+	cc -c main.c
+
+dns.o : dns.c dns.h
 	cc -c dns.c
 
-request.o : request.c request.h
-	cc -c request.c
-
 clean :
-	rm dns dns.o request.o
+	rm dns main.o dns.o
