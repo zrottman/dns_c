@@ -47,7 +47,7 @@ DNSQuestion* NewDNSQuestion(char *encoded_name, uint16_t type, uint16_t class)
 //              domain_name (char*): domain name to resolve in presentation format
 //              record_type: e.g., TYPE_A = 1
 // Returns:    Pointer to malloc'ed DNSQuery
-DNSQuery NewDNSQuery(char *domain_name, uint16_t record_type)
+DNSQuery NewDNSQuery(char *domain_name, uint16_t record_type) // Change to DNSQuery*
 {
     // create header
     int        id = 0; // TODO general random ID to pass to NewHeader()
@@ -67,6 +67,12 @@ DNSQuery NewDNSQuery(char *domain_name, uint16_t record_type)
     question_to_bytes(question, full_query.s + sizeof(*header));
 
     return full_query;
+}
+
+DNSPacket *NewDNSPacket(char *response_bytes) {
+    DNSPacket *packet = calloc(1, sizeof(DNSPacket));
+    
+    return packet;
 }
 
 // Function:    encode_dns_name

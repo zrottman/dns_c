@@ -46,9 +46,19 @@ typedef struct DNSRecord
     struct DNSRecord *next;        // linked list next pointer
 } DNSRecord;
 
+typedef struct DNSPacket
+{
+    DNSHeader       *header;
+    DNSQuestion     *questions;
+    DNSRecord       *answers;
+    DNSRecord       *authorities;
+    DNSRecord       *additionals;
+} DNSPacket;
+
 DNSHeader*   NewDNSHeader(uint16_t id, uint16_t flags, uint16_t num_questions);
 DNSQuestion* NewDNSQuestion(char *encoded_name, uint16_t type, uint16_t class);
-DNSQuery     NewDNSQuery(char *domain_name, uint16_t record_type);
+DNSQuery     NewDNSQuery(char *domain_name, uint16_t record_type); // change to DNSQuery*
+DNSPacket*   NewDNSPacket(char *response_bytes);
 
 void         display_DNSHeader(DNSHeader *header);
 void         display_DNSQuestion(DNSQuestion *question);
