@@ -57,7 +57,7 @@ typedef struct DNSPacket
 
 DNSHeader*   NewDNSHeader(uint16_t id, uint16_t flags, uint16_t num_questions);
 DNSQuestion* NewDNSQuestion(char *encoded_name, uint16_t type, uint16_t class);
-DNSQuery     NewDNSQuery(char *domain_name, uint16_t record_type); // change to DNSQuery*
+DNSQuery*    NewDNSQuery(char *domain_name, uint16_t record_type);
 DNSPacket*   NewDNSPacket(char *response_bytes);
 
 void         display_DNSHeader(DNSHeader *header);

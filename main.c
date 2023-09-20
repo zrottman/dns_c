@@ -34,17 +34,17 @@ int main(int argc, char **argv)
     sockfd = socket(PF_INET, SOCK_DGRAM, 0);
 
     // create query
-    DNSQuery query = NewDNSQuery(argv[1], TYPE_A);
+    DNSQuery *query = NewDNSQuery(argv[1], TYPE_A);
     
     // send query
-    ssize_t bytes_sent = sendto(sockfd, query.s, query.len, 0, (struct sockaddr *)&dest, sizeof dest);
+    ssize_t bytes_sent = sendto(sockfd, query->s, query->len, 0, (struct sockaddr *)&dest, sizeof dest);
     if (bytes_sent == -1)
         perror("sendto");
 
     // print query bytes
     printf("%ld bytes sent: \n", bytes_sent);
-    for (int i=0; i<query.len; ++i) {
-        printf("%x/", (char)query.s[i]);
+    for (int i=0; i<query->len; ++i) {
+        printf("%x/", (char)query->s[i]);
     }
     printf("\n\n");
 
