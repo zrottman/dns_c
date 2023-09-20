@@ -63,6 +63,7 @@ DNSPacket*   NewDNSPacket(char *response_bytes);
 void         display_DNSHeader(DNSHeader *header);
 void         display_DNSQuestion(DNSQuestion *question);
 void         display_DNSRecord(DNSRecord *record);
+void         display_DNSPacket(DNSPacket *packet);
 
 size_t       encode_dns_name(char* domain_name, char* res);
 void         header_to_bytes(DNSHeader *header, char *header_bytes);

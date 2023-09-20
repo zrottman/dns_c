@@ -63,7 +63,12 @@ int main(int argc, char **argv)
     // close socket
     close(sockfd);
 
+    // build DNS response packet
     DNSPacket *packet = NewDNSPacket(buf);
+
+    // print packet
+    display_DNSPacket(packet);
+
 
     return 0;
 }
