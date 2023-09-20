@@ -146,12 +146,9 @@ DNSPacket *NewDNSPacket(char *response_bytes) {
     
     // parse authorities
 
-    // display structs
-    display_DNSHeader(header);
-    display_DNSQuestion(questions_head);
-    display_DNSRecord(answers_head);
-    //display_DNSRecord(additionals_head);
-    //display_DNSRecord(authorities_head);
+    packet->header = header;
+    packet->questions = questions_head;
+    packet->answers = answers_head;
 
     return packet;
 }
@@ -371,17 +368,9 @@ void display_DNSRecord(DNSRecord *record)
     DNSRecord *cur_record = record;
     while (cur_record != NULL) {
 
-        printf("RESPONSE: RECORD\n");
-        printf("cur_record->name: %s\n", cur_record->name);
-        printf("cur_record->type: %d\n", ntohs(cur_record->type));
-        printf("cur_record->class: %d\n", ntohs(cur_record->class));
-        printf("cur_record->ttl %d\n", ntohl(cur_record->ttl));
-        printf("cur_record->data_len: %d\n", ntohs(cur_record->data_len));
-        printf("cur_record->data_bytes: ");
-
         uint32_t ipv4 = 0;
-        char ip[INET_ADDRSTRLEN];
-        
+        char     ip[INET_ADDRSTRLEN];
+
         // Build IPv4 in Host Byte Order (why are the IP address bytes in host byte order?)
         for (int i = 0; i < ntohs(cur_record->data_len); i++) {
             ipv4 <<= 8;
@@ -392,10 +381,24 @@ void display_DNSRecord(DNSRecord *record)
         ipv4 = htonl(ipv4);
         inet_ntop(AF_INET, &ipv4, ip, INET_ADDRSTRLEN);
 
-        printf("%s\n" , ip);
+        printf("RESPONSE: RECORD\n");
+        printf("cur_record->name: %s\n", cur_record->name);
+        printf("cur_record->type: %d\n", ntohs(cur_record->type));
+        printf("cur_record->class: %d\n", ntohs(cur_record->class));
+        printf("cur_record->ttl %d\n", ntohl(cur_record->ttl));
+        printf("cur_record->data_len: %d\n", ntohs(cur_record->data_len));
+        printf("cur_record->data_bytes: %s\n" , ip);
         printf("\n\n");
+        
         cur_record = cur_record->next;
     }
 }
 
-
+void display_DNSPacket(DNSPacket *packet)
+{
+    display_DNSHeader(packet->header);
+    display_DNSQuestion(packet->questions);
+    display_DNSRecord(packet->answers);
+    //display_DNSRecord(packet->additionals);
+    //display_DNSRecord(packet->authorities);
+}
