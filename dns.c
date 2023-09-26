@@ -70,86 +70,38 @@ DNSQuery *NewDNSQuery(char *domain_name, uint16_t record_type)
     return query;
 }
 
-DNSPacket *NewDNSPacket(char *response_bytes) {
+DNSPacket *NewDNSPacket(const char *response_bytes) {
     DNSPacket *packet = calloc(1, sizeof(DNSPacket));
 
     // parse response
     DNSHeader   *header   = calloc(1, sizeof(DNSHeader));
-    DNSQuestion *questions_head   = NULL; // replace with: questions
-    DNSQuestion *questions_tail   = NULL;
-    DNSRecord   *answers_head     = NULL; // resplaace with: answers
-    DNSRecord   *answers_tail     = NULL;
-    /*
-    DNSRecord   *authorities_head = NULL;
-    DNSRecord   *authorities_tail = NULL;
-    DNSRecord   *additionals_head = NULL;
-    DNSRecord   *additionals_tail = NULL;
-    */
-    //DNSRecord   *record   = calloc(1, sizeof(DNSRecord));  // init record->next = NULL
+    DNSQuestion *questions = NULL;
+    DNSRecord *answers = NULL;
+    DNSRecord *authorities = NULL;
+    DNSRecord *additionals = NULL;
+
     int          bytes_read;
 
     // parse header
     bytes_read = parse_header(response_bytes, header);
-
-    // TODO:
-    // Generalize below parsing loops (but need to check for type -- DNSQuestion vs DNS Record):
-    //
-    // bytes_in = parse(ll_head, num loops, buf, bytes_read, response_type)
-    //
-    // enum response_type { QUESTION, ANSWER, AUTHORITY, ADDITIONAL };
-    //
-    // ** include a switch statement in parse function to determine correct struct to use based on response type
-    // ** allow generic parse function to handle tail management --> we don't need access to tail outside that func
-    // 
-    // bytes_in = parse(questions, ntohs(header->num_questions, buf, bytes_read, QUESTION)
-    // bytes_in = parse(answers, ntohs(header->num_answers, buf, bytes_read, ANSWER)
-    // bytes_in = parse(authorities, ntohs(header->num_authorities, buf, bytes_read, AUTHORITY)
-    // bytes_in = parse(additionals, ntohs(header->num_additionals, buf, bytes_read, ADDITIONAL)
     
     // parse questions
-    for (int i=0; i < ntohs(header->num_questions); ++i) {
-        //printf("questions loop: %d\n", i);
-        
-        // malloc space for new question
-        DNSQuestion *cur_question = calloc(1, sizeof(DNSQuestion)); // init question->next = NULL
-                                                                     
-        // parse current question
-        bytes_read = parse_question(response_bytes, bytes_read, cur_question); // parse question
-
-        // append cur question to end of questions linked list
-        if (questions_head == NULL) {
-            questions_head = questions_tail = cur_question;
-        } else {
-            questions_tail->next = cur_question;
-            questions_tail = questions_tail->next;
-        }
-    }
+    bytes_read = parse_questions(response_bytes, bytes_read, ntohs(header->num_questions), &questions);
 
     // parse answers
-    for (int i=0; i < ntohs(header->num_answers); ++i) {
-        
-        // malloc space for new answer
-        DNSRecord   *cur_answer = calloc(1, sizeof(DNSRecord));  // init record->next = NULL
-                                                                     
-        // parse current question
-        bytes_read = parse_record(response_bytes, bytes_read, cur_answer);     // parse answer
+    bytes_read = parse_records(response_bytes, bytes_read, ntohs(header->num_answers), &answers);
 
-        // append cur question to end of questions linked list
-        if (answers_head == NULL) {
-            answers_head = answers_tail = cur_answer;
-        } else {
-            answers_tail->next = cur_answer;
-            answers_tail = answers_tail->next;
-        }
-    }
+    // parse authorities
+    bytes_read = parse_records(response_bytes, bytes_read, ntohs(header->num_authorities), &authorities);
 
     // parse additionals
+    bytes_read = parse_records(response_bytes, bytes_read, ntohs(header->num_additionals), &additionals);
     
-    // parse authorities
-
     packet->header = header;
-    packet->questions = questions_head;
-    packet->answers = answers_head;
+    packet->questions = questions;
+    packet->answers = answers;
+    packet->authorities = authorities;
+    packet->additionals = additionals;
 
     return packet;
 }
@@ -226,7 +178,7 @@ void question_to_bytes(DNSQuestion *question, char *question_bytes) {
 //              response_bytes (char*): pointer to response bytes
 //              header (DNSHeader*): pointer to empty DNSHeader struct for result
 // Returns:    Count of number of bytes of response consumed from header parsing
-size_t parse_header(char* response_bytes, DNSHeader *header)
+size_t parse_header(const char* response_bytes, DNSHeader *header)
 {
     memcpy(header, response_bytes, sizeof(*header));
     return 12; 
@@ -240,7 +192,7 @@ size_t parse_header(char* response_bytes, DNSHeader *header)
 //             response_bytes (char*): pointer to response bytes
 //             bytes_in (int): value representing number of bytes already consumed
 // Returns:    Count of number of bytes of response consumed from parsing
-int parse_question(char* response_bytes, int bytes_in, DNSQuestion *question)
+int parse_question(const char* response_bytes, int bytes_in, DNSQuestion *question)
 {
     char *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NULL byte
 
@@ -253,6 +205,49 @@ int parse_question(char* response_bytes, int bytes_in, DNSQuestion *question)
     return bytes_in + 4;
 }
 
+/* num_reocrds should be converted newtwork to host by caller */
+int parse_records(const char *response_bytes, int bytes_read, int num_records, DNSRecord **head)
+{
+    *head = NULL;
+    DNSRecord *tail = NULL;
+    for (int i=0; i < num_records; ++i) {
+        // malloc space for new record
+        DNSRecord   *cur_record = calloc(1, sizeof(*tail));  // init record->next = NULL                                                                     
+        // parse current record
+        bytes_read = parse_record(response_bytes, bytes_read, cur_record);     // parse record
+
+        // append cur record to end of records linked list
+        if (*head == NULL) {
+            *head = tail = cur_record;
+        } else {
+            tail->next = cur_record;
+            tail = tail->next;
+        }
+    }
+    return bytes_read;
+}
+
+int parse_questions(const char *response_bytes, int bytes_read, int num_questions, DNSQuestion **head)
+{
+    *head = NULL;
+    DNSQuestion *tail = NULL;
+    for (int i=0; i < num_questions; ++i) {
+        // malloc space for new question
+        DNSQuestion   *cur_question = calloc(1, sizeof(*tail));  // init question->next = NULL                                                                     
+        // parse current question
+        bytes_read = parse_question(response_bytes, bytes_read, cur_question);     // parse question
+
+        // append cur question to end of questions linked list
+        if (*head == NULL) {
+            *head = tail = cur_question;
+        } else {
+            tail->next = cur_question;
+            tail = tail->next;
+        }
+    }
+    return bytes_read;
+}
+
 // Function:    parse_record
 // Description: Parse DNS record information from response bytes beginning from byte
 //              specified by `bytes_in`, and populates empt DNSRecord struct
@@ -261,9 +256,9 @@ int parse_question(char* response_bytes, int bytes_in, DNSQuestion *question)
 //             response_bytes (char*): pointer to response bytes
 //             bytes_in (int): value representing number of bytes already consumed
 // Returns:    Count of number of bytes of response consumed from parsing
-int parse_record(char* response_bytes, int bytes_in, DNSRecord *record)
+int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
 {
-     char    *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NULL byte
+    char    *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NULL byte
                                                                        
     bytes_in = decode_name(response_bytes, bytes_in, decoded_name);
 
@@ -290,7 +285,7 @@ int parse_record(char* response_bytes, int bytes_in, DNSRecord *record)
 //             response_bytes (char*): pointer to response bytes
 //             bytes_in (int): value representing number of bytes already consumed
 // Returns:    Count of number of bytes of response consumed from parsing
-int decode_name(char* response_bytes, int bytes_in, char *decoded_name)
+int decode_name(const char* response_bytes, int bytes_in, char *decoded_name)
 {
     int name_bytes;
     int len = response_bytes[bytes_in];
@@ -323,7 +318,7 @@ int decode_name(char* response_bytes, int bytes_in, char *decoded_name)
 //             response_bytes (char*): pointer to response bytes
 //             bytes_in (int): value representing number of bytes already consumed
 // Returns:    Count of number of bytes of response consumed from parsing
-int decode_compressed_name(char* response_bytes, int bytes_in, char *decoded_name)
+int decode_compressed_name(const char* response_bytes, int bytes_in, char *decoded_name)
 {
     uint16_t pointer;
 
