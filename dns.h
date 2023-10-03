@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define TYPE_A   1
+#define TYPE_NS  2
 #define CLASS_IN 1
 
 // TODO: Consider defining structs in request.c but adding prototypes here, eg:
@@ -76,4 +77,5 @@ int          parse_questions(const char *response_bytes, int bytes_read, int num
 int          decode_name(const char* response_bytes, int bytes_in, char *decoded_name);
 int          decode_compressed_name(const char* response_bytes, int bytes_in, char *decoded_name);
 
+DNSPacket * send_query(char *addr, char *domain, u_int16_t type);
 #endif // REQUEST_H

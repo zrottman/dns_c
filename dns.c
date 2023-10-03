@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "dns.h"
 
 // Function:    NewDNSHeader
@@ -51,8 +52,8 @@ DNSQuery *NewDNSQuery(char *domain_name, uint16_t record_type)
 {
     // create header
     int        id = 0; // TODO general random ID to pass to NewHeader()
-    int        RECURSION_DESIRED = 1 << 8; 
-    DNSHeader* header = NewDNSHeader(id, RECURSION_DESIRED, 1);
+    // int        RECURSION_DESIRED = 1 << 8; 
+    DNSHeader* header = NewDNSHeader(id, 0, 1);
 
     // create question
     char         encoded_domain[100] = {0}; // buf for encoded domain
@@ -259,7 +260,7 @@ int parse_questions(const char *response_bytes, int bytes_read, int num_question
 int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
 {
     char    *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NULL byte
-                                                                       
+    printf("Length %lu\n", strlen(response_bytes + bytes_in));                               
     bytes_in = decode_name(response_bytes, bytes_in, decoded_name);
 
     record->name = decoded_name;
@@ -269,6 +270,16 @@ int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
 
     int      len = ntohs(record->data_len);
     uint8_t *data_bytes = malloc(len);
+
+    // switch(record->type) {
+    //     case TYPE_A:    
+    //                     break;
+
+    //     case TYPE_NS:   
+    //                     break;
+
+    //     default:        
+    // }
 
     memcpy(data_bytes, response_bytes + bytes_in, len);
     record->data_bytes = data_bytes;
@@ -287,6 +298,9 @@ int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
 // Returns:    Count of number of bytes of response consumed from parsing
 int decode_name(const char* response_bytes, int bytes_in, char *decoded_name)
 {
+
+    printf("Length right before %lu\n", strlen(decoded_name));
+
     int name_bytes;
     int len = response_bytes[bytes_in];
     int p;
@@ -306,6 +320,8 @@ int decode_name(const char* response_bytes, int bytes_in, char *decoded_name)
             len--;
         }
     }
+
+    printf("Length after %lu, counter %d\n", strlen(decoded_name), p);
 
     return bytes_in + 1;
 }
@@ -330,6 +346,56 @@ int decode_compressed_name(const char* response_bytes, int bytes_in, char *decod
 
     return bytes_in + 2;
 }
+
+DNSPacket *send_query(char *addr, char *domain, u_int16_t type) {
+    /* send request */
+    int                     sockfd;
+    struct sockaddr_in      dest;
+    char                    buf[512];
+    struct sockaddr_storage from;
+    socklen_t               fromlen;
+
+    dest.sin_port = htons(53);
+    dest.sin_family = AF_INET;
+    inet_pton(dest.sin_family, addr, &(dest.sin_addr));
+
+    // open socket
+    sockfd = socket(PF_INET, SOCK_DGRAM, 0);
+
+    // create query
+    DNSQuery *query = NewDNSQuery(domain, type);
+    
+    // send query
+    ssize_t bytes_sent = sendto(sockfd, query->s, query->len, 0, (struct sockaddr *)&dest, sizeof dest);
+    if (bytes_sent == -1)
+        perror("sendto");
+
+    // print query bytes
+    printf("%ld bytes sent: \n", bytes_sent);
+    for (int i=0; i<query->len; ++i) {
+        printf("%x/", (char)query->s[i]);
+    }
+    printf("\n\n");
+
+    // receive result
+    ssize_t bytes_received = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr *)&from, &fromlen);
+    if (bytes_received == -1)
+        perror("recvfrom");
+
+    // print result bytes
+    printf("%zd bytes received: \n", bytes_received);
+    for (int i=0; i<bytes_received; ++i) {
+        printf("%x/", (unsigned char)buf[i]);
+    }
+    printf("\n\n");
+
+    // close socket
+    close(sockfd);
+
+    return NewDNSPacket(buf);
+}
+
+
 /* DISPLAY FUNCTIONS */
 void display_DNSHeader(DNSHeader *header)
 {
