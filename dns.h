@@ -30,7 +30,7 @@ typedef struct DNSHeader
 typedef struct DNSQuestion
 {
     // stored in network byte order
-    char                *encoded_name; // TODO: change to `name`
+    char                *name;
     u_int16_t           type;       // set to TYPE_A=1 (A Record)
     u_int16_t           class;      // set to CLASS_IN=1 (for internet)
     struct DNSQuestion *next;       // linked list next pointer
@@ -43,8 +43,10 @@ typedef struct DNSRecord
     uint16_t          type;        // e.g., A record
     uint16_t          class;       // 1
     uint32_t          ttl;         // time to live
-    uint16_t          data_len;    // NOTE: net-byte-order!
+    uint16_t          bytes_len;    // length of data bytes NOTE: net-byte-order!
+    size_t            data_len;    // length of human readable data
     uint8_t          *data_bytes;  // the record's content
+    char            *data;      // human readable data 
     struct DNSRecord *next;        // linked list next pointer
 } DNSRecord;
 

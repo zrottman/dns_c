@@ -33,10 +33,10 @@ DNSHeader* NewDNSHeader(uint16_t id, uint16_t flags, uint16_t num_questions)
 DNSQuestion* NewDNSQuestion(char *encoded_name, uint16_t type, uint16_t class)
 {
     DNSQuestion *question  = calloc(1, sizeof(DNSQuestion));
-    question->encoded_name = malloc(strlen(encoded_name) + 1);
+    question->name = malloc(strlen(encoded_name) + 1);
     question->type         = htons(type);
     question->class        = htons(class);
-    strcpy(question->encoded_name, encoded_name);
+    strcpy(question->name, encoded_name);
 
     return question;
 }
@@ -62,7 +62,7 @@ DNSQuery *NewDNSQuery(char *domain_name, uint16_t record_type)
 
     // build query
     DNSQuery* query = calloc(1, sizeof(DNSQuery));
-    query->len = sizeof(*header) + 4 + strlen(question->encoded_name) + 1;
+    query->len = sizeof(*header) + 4 + strlen(question->name) + 1;
     query->s = malloc(query->len);
     
     header_to_bytes(header, query->s);
@@ -163,9 +163,9 @@ void header_to_bytes(DNSHeader *header, char *header_bytes) {
 void question_to_bytes(DNSQuestion *question, char *question_bytes) {
     char *p;
 
-    strcpy(question_bytes, question->encoded_name);
+    strcpy(question_bytes, question->name);
 
-    p = question_bytes + strlen(question->encoded_name) + 1;
+    p = question_bytes + strlen(question->name) + 1;
     memcpy(p, &(question->type), sizeof question->type);
 
     p += sizeof question->type;
@@ -200,11 +200,11 @@ int parse_question(const char* response_bytes, int bytes_in, DNSQuestion *questi
     bytes_in = decode_name(response_bytes, bytes_in, decoded_name);
 
     size_t len = strlen(decoded_name) + 1;
-    question->encoded_name = (char *)malloc(len);
+    question->name = (char *)malloc(len);
 
-    strlcpy(question->encoded_name, decoded_name, len);
+    strlcpy(question->name, decoded_name, len);
 
-    memcpy((void*)question + sizeof(question->encoded_name), response_bytes + bytes_in, 4);
+    memcpy((void*)question + sizeof(question->name), response_bytes + bytes_in, 4);
 
     return bytes_in + 4;
 }
@@ -263,8 +263,10 @@ int parse_questions(const char *response_bytes, int bytes_read, int num_question
 int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
 {
     char decoded_name[MAX_BUFFER_SIZE] = {0};
-    bytes_in = decode_name(response_bytes, bytes_in, decoded_name);
+    char decoded_data[MAX_BUFFER_SIZE] = {0};
 
+    bytes_in = decode_name(response_bytes, bytes_in, decoded_name);
+    
     size_t decoded_len = strlen(decoded_name) + 1; // len + null terminator
     record->name = (char *)malloc(decoded_len);
     strlcpy(record->name, decoded_name, decoded_len);
@@ -272,7 +274,7 @@ int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
     memcpy((void*)record + sizeof(record->name), response_bytes + bytes_in, 10);
     bytes_in += 10;
 
-    int      len = ntohs(record->data_len);
+    int      len = ntohs(record->bytes_len);
     uint8_t *data_bytes = malloc(len);
 
     // TODO: we are going to store data_bytes in human readable format
@@ -280,16 +282,16 @@ int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
     //
     // when we get here, we are at the payload portion of the response_bytes.
     //
-    // if we're in an a record, convert that to presentation and store human readable ip address at data_bytes
+    // if we're in an a record, convert that to presentation and store human readable ip address at data
     //    53/f3/d3/04 -> 123.23.24.13
     //
-    // if we're in an NS record, we need to decode that and store decoded at data bytes
+    // if we're in an NS record, we need to decode that and store decoded at data
     //    03/www/07./example/03/com -> www.example.com
     //
     // either way, do the same process above: make a buffer, pass into a function to parse ip address or decode name,
-    // and then malloc space from there based on actual length and return pointer to that char*
+    // and then malloc space from there based on string length and return pointer to that char*
     //
-    // question: should record->data_len change to length of human readable versions above?
+    // question: should record->bytes_len change to length of human readable versions above?
     //
     // consider revising struct to include original data length and data bytes AND parsed/decoded data length and data bytes
     //
@@ -308,6 +310,33 @@ int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
 
     memcpy(data_bytes, response_bytes + bytes_in, len);
     record->data_bytes = data_bytes;
+    uint32_t   ipv4 = 0;
+    switch (ntohs(record->type))
+    {
+    case TYPE_A:
+        // char     ip[INET_ADDRSTRLEN];
+        // Build IPv4 in Host Byte Order (why are the IP address bytes in host byte order?)
+        for (int i = 0; i < ntohs(record->bytes_len); i++) {
+            ipv4 <<= 8;
+            ipv4 |= record->data_bytes[i];
+        }
+
+        // Convert IPv4 address to Network Byte Order
+        ipv4 = htonl(ipv4);
+        inet_ntop(AF_INET, &ipv4, decoded_data, MAX_BUFFER_SIZE);
+        break;
+    case TYPE_NS:
+        decode_name(response_bytes, bytes_in, decoded_data);
+        break;
+    default:
+        //this is a palce holder. we don't yet know how to parse non TYPE_A or TYPE NS
+        decode_name(response_bytes, bytes_in, decoded_data);
+        break;
+    }
+
+    record->data_len = strlen(decoded_data) + 1; // len + null terminator
+    record->data = (char *)malloc(record->data_len);
+    strlcpy(record->data, decoded_data, record->data_len);
 
     return bytes_in + len;
 }
@@ -436,7 +465,7 @@ void display_DNSQuestion(DNSQuestion *question)
     while (cur_question != NULL) {
 
         printf("RESPONSE: QUESTION\n");
-        printf("cur_question->encoded_name: %s\n", cur_question->encoded_name);
+        printf("cur_question->name: %s\n", cur_question->name);
         printf("cur_question->type: %d\n", ntohs(cur_question->type));
         printf("cur_question->class: %d\n", ntohs(cur_question->class));
         printf("\n\n");
@@ -450,26 +479,35 @@ void display_DNSRecord(DNSRecord *record)
     DNSRecord *cur_record = record;
     while (cur_record != NULL) {
 
-        uint32_t ipv4 = 0;
-        char     ip[INET_ADDRSTRLEN];
+        // uint32_t ipv4 = 0;
+        // char     ip[INET_ADDRSTRLEN];
 
-        // Build IPv4 in Host Byte Order (why are the IP address bytes in host byte order?)
-        for (int i = 0; i < ntohs(cur_record->data_len); i++) {
-            ipv4 <<= 8;
-            ipv4 |= cur_record->data_bytes[i];
-        }
+        // // Build IPv4 in Host Byte Order (why are the IP address bytes in host byte order?)
+        // for (int i = 0; i < ntohs(cur_record->bytes_len); i++) {
+        //     ipv4 <<= 8;
+        //     ipv4 |= cur_record->data_bytes[i];
+        // }
 
-        // Convert IPv4 address to Network Byte Order
-        ipv4 = htonl(ipv4);
-        inet_ntop(AF_INET, &ipv4, ip, INET_ADDRSTRLEN);
+        // // Convert IPv4 address to Network Byte Order
+        // ipv4 = htonl(ipv4);
+        // inet_ntop(AF_INET, &ipv4, ip, INET_ADDRSTRLEN);
+
+        
 
         printf("RESPONSE: RECORD\n");
         printf("cur_record->name: %s\n", cur_record->name);
         printf("cur_record->type: %d\n", ntohs(cur_record->type));
         printf("cur_record->class: %d\n", ntohs(cur_record->class));
         printf("cur_record->ttl %d\n", ntohl(cur_record->ttl));
-        printf("cur_record->data_len: %d\n", ntohs(cur_record->data_len));
-        printf("cur_record->data_bytes: %s\n" , ip);
+        printf("cur_record->bytes_len: %d\n", ntohs(cur_record->bytes_len));
+        printf("cur_record->data_bytes: ");
+        for (int i = 0; i < ntohs(cur_record->bytes_len); i++)
+        {
+            printf(" %x ", cur_record->data_bytes[i]); 
+        }
+        printf("\n");
+        printf("cur_record_data_len: %zu\n", cur_record->data_len);
+        printf("cur_record->data: %s\n", cur_record->data);
         printf("\n\n");
         
         cur_record = cur_record->next;
