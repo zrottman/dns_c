@@ -195,18 +195,21 @@ size_t parse_header(const char* response_bytes, DNSHeader *header)
 // Returns:    Count of number of bytes of response consumed from parsing
 int parse_question(const char* response_bytes, int bytes_in, DNSQuestion *question)
 {
-    char *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NULL byte
+    char decoded_name[MAX_BUFFER_SIZE] = {0};
 
     bytes_in = decode_name(response_bytes, bytes_in, decoded_name);
 
-    question->encoded_name = decoded_name;
+    size_t len = strlen(decoded_name) + 1;
+    question->encoded_name = (char *)malloc(len);
+
+    strlcpy(question->encoded_name, decoded_name, len);
 
     memcpy((void*)question + sizeof(question->encoded_name), response_bytes + bytes_in, 4);
 
     return bytes_in + 4;
 }
 
-/* num_reocrds should be converted newtwork to host by caller */
+/* num_records should be converted newtwork to host by caller */
 int parse_records(const char *response_bytes, int bytes_read, int num_records, DNSRecord **head)
 {
     *head = NULL;
@@ -259,11 +262,12 @@ int parse_questions(const char *response_bytes, int bytes_read, int num_question
 // Returns:    Count of number of bytes of response consumed from parsing
 int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
 {
-    char    *decoded_name = malloc(strlen(response_bytes + bytes_in)); // look for the NULL byte
-    printf("Length %lu\n", strlen(response_bytes + bytes_in));                               
+    char decoded_name[MAX_BUFFER_SIZE] = {0};
     bytes_in = decode_name(response_bytes, bytes_in, decoded_name);
 
-    record->name = decoded_name;
+    size_t decoded_len = strlen(decoded_name) + 1; // len + null terminator
+    record->name = (char *)malloc(decoded_len);
+    strlcpy(record->name, decoded_name, decoded_len);
 
     memcpy((void*)record + sizeof(record->name), response_bytes + bytes_in, 10);
     bytes_in += 10;
@@ -271,6 +275,27 @@ int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
     int      len = ntohs(record->data_len);
     uint8_t *data_bytes = malloc(len);
 
+    // TODO: we are going to store data_bytes in human readable format
+    // 2.123.23.14 for ip addresses and www.example.com for domains
+    //
+    // when we get here, we are at the payload portion of the response_bytes.
+    //
+    // if we're in an a record, convert that to presentation and store human readable ip address at data_bytes
+    //    53/f3/d3/04 -> 123.23.24.13
+    //
+    // if we're in an NS record, we need to decode that and store decoded at data bytes
+    //    03/www/07./example/03/com -> www.example.com
+    //
+    // either way, do the same process above: make a buffer, pass into a function to parse ip address or decode name,
+    // and then malloc space from there based on actual length and return pointer to that char*
+    //
+    // question: should record->data_len change to length of human readable versions above?
+    //
+    // consider revising struct to include original data length and data bytes AND parsed/decoded data length and data bytes
+    //
+    // and the reason we're doing this again is because when we recursively search for an NS record domain, we need to
+    // pass in the human-readable domain name, and in the event that is compressed, we need to decode it first
+    //
     // switch(record->type) {
     //     case TYPE_A:    
     //                     break;
@@ -298,9 +323,6 @@ int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
 // Returns:    Count of number of bytes of response consumed from parsing
 int decode_name(const char* response_bytes, int bytes_in, char *decoded_name)
 {
-
-    printf("Length right before %lu\n", strlen(decoded_name));
-
     int name_bytes;
     int len = response_bytes[bytes_in];
     int p;
@@ -311,7 +333,7 @@ int decode_name(const char* response_bytes, int bytes_in, char *decoded_name)
     }
     // TODO: consider splitting this into its own function
     //       maybe call it "int split_domain"
-    for(++bytes_in, p = 0; response_bytes[bytes_in] != '\0'; ++bytes_in, ++p){
+    for(++bytes_in, p = 0; response_bytes[bytes_in] != '\0' && p < MAX_BUFFER_SIZE-1; ++bytes_in, ++p){
         if (len == 0){
             len = response_bytes[bytes_in];
             decoded_name[p] = '.';
@@ -320,8 +342,6 @@ int decode_name(const char* response_bytes, int bytes_in, char *decoded_name)
             len--;
         }
     }
-
-    printf("Length after %lu, counter %d\n", strlen(decoded_name), p);
 
     return bytes_in + 1;
 }

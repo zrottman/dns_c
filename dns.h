@@ -6,6 +6,7 @@
 #define TYPE_A   1
 #define TYPE_NS  2
 #define CLASS_IN 1
+#define MAX_BUFFER_SIZE 1000
 
 // TODO: Consider defining structs in request.c but adding prototypes here, eg:
 // typedef struct DNSQuery DNSQuery;
@@ -29,7 +30,7 @@ typedef struct DNSHeader
 typedef struct DNSQuestion
 {
     // stored in network byte order
-    char                *encoded_name;
+    char                *encoded_name; // TODO: change to `name`
     u_int16_t           type;       // set to TYPE_A=1 (A Record)
     u_int16_t           class;      // set to CLASS_IN=1 (for internet)
     struct DNSQuestion *next;       // linked list next pointer

@@ -14,5 +14,7 @@ int main(int argc, char **argv)
     DNSPacket *packet = send_query("8.8.8.8", argv[1], TYPE_A);
     display_DNSPacket(packet);
 
+    // destroy_DNSPacket(packet);
+
     return 0;
 }
