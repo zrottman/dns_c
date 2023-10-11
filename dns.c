@@ -519,6 +519,73 @@ void display_DNSPacket(DNSPacket *packet)
     display_DNSHeader(packet->header);
     display_DNSQuestion(packet->questions);
     display_DNSRecord(packet->answers);
-    //display_DNSRecord(packet->additionals);
-    //display_DNSRecord(packet->authorities);
+    display_DNSRecord(packet->additionals);
+    display_DNSRecord(packet->authorities);
+}
+
+int destroy_DNSPacket(DNSPacket **packet) {
+    destroy_DNSHeader(&((*packet)->header));
+    destroy_DNSQuestion(&((*packet)->questions));
+    destroy_DNSRecord(&((*packet)->answers));
+    destroy_DNSRecord(&((*packet)->authorities));
+    destroy_DNSRecord(&((*packet)->authorities));
+    free(*packet);
+    (*packet) = NULL;
+    return 0;
+}
+
+int destroy_DNSHeader(DNSHeader **header) {
+    free(*header);
+    (*header) = NULL;
+    return 0;
+}
+
+int destroy_DNSQuestion(DNSQuestion **question) {
+    // Am I correctly destroying the *next link? Is there a mem leak here?
+    DNSQuestion **cur  = question;
+    DNSQuestion **next = &((*cur)->next);
+
+    while ((*cur) != NULL) {
+        next = &((*cur)->next); // hold reference to next, since current node will be freed
+
+        free((*cur)->name);
+        (*cur)->name = NULL;
+
+        (*cur)->next = NULL;
+        
+        free(*cur);
+        *cur = NULL;
+
+        cur = next;
+    }
+
+    return 0;
+}
+
+int destroy_DNSRecord(DNSRecord **record) {
+    // Am I correctly destroying the *next link? Is there a mem leak here?
+    DNSRecord **cur  = record;
+    DNSRecord **next = &((*cur)->next);
+
+    while (*cur != NULL) {
+        next = &((*cur)->next); // hold reference to next, since current node will be freed
+
+        free((*cur)->name);
+        (*cur)->name = NULL;
+
+        free((*cur)->data_bytes);
+        (*cur)->data_bytes = NULL;
+
+        free((*cur)->data);
+        (*cur)->data = NULL;
+
+        (*cur)->next = NULL;
+
+        free(*cur);
+        *cur = NULL;
+
+        cur = next;
+    }
+
+    return 0;
 }

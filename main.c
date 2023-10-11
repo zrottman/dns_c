@@ -11,10 +11,9 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    DNSPacket *packet = send_query("198.41.0.4", argv[1], TYPE_A);
+    DNSPacket *packet = send_query("8.8.8.8", argv[1], TYPE_A);
     display_DNSPacket(packet);
-
-    // destroy_DNSPacket(packet);
+    destroy_DNSPacket(&packet);
 
     return 0;
 }
