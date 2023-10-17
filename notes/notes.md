@@ -1,3 +1,12 @@
+# 2023-10-17
+Accomplished
+- fixed memory leak issues from buggy `destroy()` suite using `valgrind`
+- added `destroy_DNSQuery()` function
+
+To do
+- continue with part 3 of guide.
+- focus on resolving initial segfault error when substituting the default DNS resolution IP for `8.8.8.8`
+
 # 2023-10-10
 Accomplished
 - fixed buffer overflow issues in parse_question() and parse_record()
@@ -113,7 +122,7 @@ To do:
 - implement build_query that concatenates header_to_bytes() and question_to_bytes()
 - send the result!
 
-# 2023-07=18
+# 2023-07-18
 Accomplished 
 - debug embedding byte values in string literal: "\x07example\x03com" wasn't working as expected (we still don't know why, but we found a workaround)
 - change sendall helper fn to use sendto for UDP instead of send for TCP
