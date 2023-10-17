@@ -67,7 +67,9 @@ DNSQuery *NewDNSQuery(char *domain_name, uint16_t record_type)
     
     header_to_bytes(header, query->s);
     question_to_bytes(question, query->s + sizeof(*header));
-
+    
+    destroy_DNSHeader(&header);
+    destroy_DNSQuestion(&question);
     return query;
 }
 
@@ -202,7 +204,7 @@ int parse_question(const char* response_bytes, int bytes_in, DNSQuestion *questi
     size_t len = strlen(decoded_name) + 1;
     question->name = (char *)malloc(len);
 
-    strlcpy(question->name, decoded_name, len);
+    strncpy(question->name, decoded_name, len);
 
     memcpy((void*)question + sizeof(question->name), response_bytes + bytes_in, 4);
 
@@ -269,7 +271,7 @@ int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
     
     size_t decoded_len = strlen(decoded_name) + 1; // len + null terminator
     record->name = (char *)malloc(decoded_len);
-    strlcpy(record->name, decoded_name, decoded_len);
+    strncpy(record->name, decoded_name, decoded_len);
 
     memcpy((void*)record + sizeof(record->name), response_bytes + bytes_in, 10);
     bytes_in += 10;
@@ -336,7 +338,7 @@ int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
 
     record->data_len = strlen(decoded_data) + 1; // len + null terminator
     record->data = (char *)malloc(record->data_len);
-    strlcpy(record->data, decoded_data, record->data_len);
+    strncpy(record->data, decoded_data, record->data_len);
 
     return bytes_in + len;
 }
@@ -419,6 +421,7 @@ DNSPacket *send_query(char *addr, char *domain, u_int16_t type) {
     if (bytes_sent == -1)
         perror("sendto");
 
+
     // print query bytes
     printf("%ld bytes sent: \n", bytes_sent);
     for (int i=0; i<query->len; ++i) {
@@ -438,6 +441,8 @@ DNSPacket *send_query(char *addr, char *domain, u_int16_t type) {
     }
     printf("\n\n");
 
+    destroy_DNSQuery(&query);
+    
     // close socket
     close(sockfd);
 
@@ -542,50 +547,60 @@ int destroy_DNSHeader(DNSHeader **header) {
 
 int destroy_DNSQuestion(DNSQuestion **question) {
     // Am I correctly destroying the *next link? Is there a mem leak here?
-    DNSQuestion **cur  = question;
-    DNSQuestion **next = &((*cur)->next);
+    DNSQuestion *cur  = *question;
+    DNSQuestion *next;
+    
+    while (cur != NULL) {
+        next = cur->next; // hold reference to next, since current node will be freed
 
-    while ((*cur) != NULL) {
-        next = &((*cur)->next); // hold reference to next, since current node will be freed
+        free(cur->name);
+        cur->name = NULL;
 
-        free((*cur)->name);
-        (*cur)->name = NULL;
-
-        (*cur)->next = NULL;
+        free(cur->next);
+       	cur->next = NULL;
         
-        free(*cur);
-        *cur = NULL;
-
+        free(cur);
         cur = next;
     }
 
+    *question = NULL;
+
+    return 0;
+}
+
+
+int destroy_DNSQuery(DNSQuery **query) {
+    free((*query)->s);
+    (*query)->s = NULL;
+
+    free(*query);
+    *query = NULL;
     return 0;
 }
 
 int destroy_DNSRecord(DNSRecord **record) {
     // Am I correctly destroying the *next link? Is there a mem leak here?
-    DNSRecord **cur  = record;
-    DNSRecord **next = &((*cur)->next);
+    DNSRecord *cur  = *record;
+    DNSRecord *next;
 
-    while (*cur != NULL) {
-        next = &((*cur)->next); // hold reference to next, since current node will be freed
+    while (cur != NULL) {
+        next = cur->next; // hold reference to next, since current node will be freed
 
-        free((*cur)->name);
-        (*cur)->name = NULL;
+        free(cur->name);
+        cur->name = NULL;
 
-        free((*cur)->data_bytes);
-        (*cur)->data_bytes = NULL;
+        free(cur->data_bytes);
+        cur->data_bytes = NULL;
 
-        free((*cur)->data);
-        (*cur)->data = NULL;
+        free(cur->data);
+        cur->data = NULL;
 
-        (*cur)->next = NULL;
+        cur->next = NULL;
 
-        free(*cur);
-        *cur = NULL;
-
+        free(cur);
         cur = next;
     }
 
+    *record = NULL;
     return 0;
 }

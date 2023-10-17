@@ -31,8 +31,8 @@ typedef struct DNSQuestion
 {
     // stored in network byte order
     char               *name;
-    u_int16_t           type;       // set to TYPE_A=1 (A Record)
-    u_int16_t           class;      // set to CLASS_IN=1 (for internet)
+    uint16_t            type;       // set to TYPE_A=1 (A Record)
+    uint16_t            class;      // set to CLASS_IN=1 (for internet)
     struct DNSQuestion *next;       // linked list next pointer
 } DNSQuestion;
 
@@ -66,6 +66,7 @@ DNSPacket*   NewDNSPacket(const char *response_bytes);
 
 int          destroy_DNSPacket(DNSPacket** packet);
 int          destroy_DNSHeader(DNSHeader** header);
+int	     destroy_DNSQuery(DNSQuery** query);
 int          destroy_DNSQuestion(DNSQuestion** question);
 int          destroy_DNSRecord(DNSRecord** record);
 
