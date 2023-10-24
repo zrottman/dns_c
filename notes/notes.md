@@ -1,3 +1,11 @@
+# 2023-10-24
+- fixed segfault issue, which was that `char` type for response buffer needed to be `unsigned char`.
+- fixed compression issue so that we could handle cases where compression flag is not the first byte
+
+To do
+- refactor decode_name() function so that the loop doesn't automatically skip the first byte (assuming that it's a length byte)
+- continue with part 3 of guide.
+
 # 2023-10-17
 Accomplished
 - fixed memory leak issues from buggy `destroy()` suite using `valgrind`
