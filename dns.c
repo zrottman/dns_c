@@ -97,12 +97,9 @@ DNSPacket *NewDNSPacket(const unsigned char *response_bytes) {
     // parse authorities
     bytes_read = parse_records(response_bytes, bytes_read, ntohs(header->num_authorities), &authorities);
 
-    //printf("bytes in: %d\n", bytes_read); // 253
-
     // parse additionals
     bytes_read = parse_records(response_bytes, bytes_read, ntohs(header->num_additionals), &additionals);
-    //bytes_read = parse_records(response_bytes, 253, ntohs(header->num_additionals), &additionals);
-    
+
     packet->header = header;
     packet->questions = questions;
     packet->answers = answers;
@@ -227,9 +224,7 @@ int parse_records(const unsigned char *response_bytes, int bytes_read, int num_r
         // malloc space for new record
         DNSRecord   *cur_record = calloc(1, sizeof(*tail));  // init record->next = NULL                                                                     
         // parse current record
-        printf("about to parse record, bytes_read = %d\n", bytes_read);
         bytes_read = parse_record(response_bytes, bytes_read, cur_record);     // parse record
-        printf("finished parsing record, bytes_read = %d\n", bytes_read);
 
         // append cur record to end of records linked list
         if (*head == NULL) {
@@ -382,6 +377,7 @@ int parse_record(const unsigned char* response_bytes, int bytes_in, DNSRecord *r
 //             response_bytes (char*): pointer to response bytes
 //             bytes_in (int): value representing number of bytes already consumed
 // Returns:    Count of number of bytes of response consumed from parsing
+// Piya points out that funciton has become impossible to reason about. We should refactor it.
 int decode_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name)
 {
     int name_bytes;
@@ -389,19 +385,34 @@ int decode_name(const unsigned char* response_bytes, int bytes_in, char *decoded
     int p;
 
     printf("decode_name start\n");
+    printf("current char %x\n", len);
     // look for compression flag
     if ((0xc0 & response_bytes[bytes_in]) == 0xc0){
         return decode_compressed_name(response_bytes, bytes_in, decoded_name);
     }
     // TODO: consider splitting this into its own function
     //       maybe call it "int split_domain"
-    for(++bytes_in, p = 0; response_bytes[bytes_in] != '\0' && p < MAX_BUFFER_SIZE-1; ++bytes_in, ++p){
+    //ex: 03www07example03com => www.example.come
+    //ex: 02e.COMPRESSIONFLAG => decode_compressed_name(response_bytes, bytes_in, e.)
+    //NOTE: we just refactored p = 0 to start with the length of decoded_name because 
+    //decode_compressed_name corecursivly calls decode_name and therefore setting p to 0 overwrites decoded_name
+    
+    //Zach says the problem is that this loop assumes that the first byte is a length byte and then discards it
+    //we should rewrite the logic here to account for the first byte and then we can get rid of the redundant check for compression flags
+    for(++bytes_in, p = strlen(decoded_name); response_bytes[bytes_in] != '\0' && p < MAX_BUFFER_SIZE-1; ++bytes_in, ++p){
+        // this addresses the address boundry error, but decrementing bytes_in errases some of dcoded_name
+        // if ((0xc0 & response_bytes[--bytes_in]) == 0xc0){
+        //     return decode_compressed_name(response_bytes, bytes_in, decoded_name);
+        // }
         if (len == 0){
             len = response_bytes[bytes_in];
             decoded_name[p] = '.';
         } else {
             decoded_name[p] = response_bytes[bytes_in];
             len--;
+        }
+        if ((0xc0 & response_bytes[bytes_in]) == 0xc0){
+            return decode_compressed_name(response_bytes, bytes_in, decoded_name);
         }
     }
     printf("decode_name end\n");
