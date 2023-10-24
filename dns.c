@@ -204,7 +204,7 @@ int parse_question(const char* response_bytes, int bytes_in, DNSQuestion *questi
     size_t len = strlen(decoded_name) + 1;
     question->name = (char *)malloc(len);
 
-    strncpy(question->name, decoded_name, len);
+    strlcpy(question->name, decoded_name, len);
 
     memcpy((void*)question + sizeof(question->name), response_bytes + bytes_in, 4);
 
@@ -271,7 +271,7 @@ int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
     
     size_t decoded_len = strlen(decoded_name) + 1; // len + null terminator
     record->name = (char *)malloc(decoded_len);
-    strncpy(record->name, decoded_name, decoded_len);
+    strlcpy(record->name, decoded_name, decoded_len);
 
     memcpy((void*)record + sizeof(record->name), response_bytes + bytes_in, 10);
     bytes_in += 10;
@@ -338,7 +338,7 @@ int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
 
     record->data_len = strlen(decoded_data) + 1; // len + null terminator
     record->data = (char *)malloc(record->data_len);
-    strncpy(record->data, decoded_data, record->data_len);
+    strlcpy(record->data, decoded_data, record->data_len);
 
     return bytes_in + len;
 }
