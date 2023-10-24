@@ -73,7 +73,7 @@ DNSQuery *NewDNSQuery(char *domain_name, uint16_t record_type)
     return query;
 }
 
-DNSPacket *NewDNSPacket(const char *response_bytes) {
+DNSPacket *NewDNSPacket(const unsigned char *response_bytes) {
     DNSPacket *packet = calloc(1, sizeof(DNSPacket));
 
     // parse response
@@ -97,8 +97,11 @@ DNSPacket *NewDNSPacket(const char *response_bytes) {
     // parse authorities
     bytes_read = parse_records(response_bytes, bytes_read, ntohs(header->num_authorities), &authorities);
 
+    //printf("bytes in: %d\n", bytes_read); // 253
+
     // parse additionals
     bytes_read = parse_records(response_bytes, bytes_read, ntohs(header->num_additionals), &additionals);
+    //bytes_read = parse_records(response_bytes, 253, ntohs(header->num_additionals), &additionals);
     
     packet->header = header;
     packet->questions = questions;
@@ -181,7 +184,7 @@ void question_to_bytes(DNSQuestion *question, char *question_bytes) {
 //              response_bytes (char*): pointer to response bytes
 //              header (DNSHeader*): pointer to empty DNSHeader struct for result
 // Returns:    Count of number of bytes of response consumed from header parsing
-size_t parse_header(const char* response_bytes, DNSHeader *header)
+size_t parse_header(const unsigned char* response_bytes, DNSHeader *header)
 {
     memcpy(header, response_bytes, sizeof(*header));
     return 12; 
@@ -195,7 +198,7 @@ size_t parse_header(const char* response_bytes, DNSHeader *header)
 //             response_bytes (char*): pointer to response bytes
 //             bytes_in (int): value representing number of bytes already consumed
 // Returns:    Count of number of bytes of response consumed from parsing
-int parse_question(const char* response_bytes, int bytes_in, DNSQuestion *question)
+int parse_question(const unsigned char* response_bytes, int bytes_in, DNSQuestion *question)
 {
     char decoded_name[MAX_BUFFER_SIZE] = {0};
 
@@ -212,15 +215,21 @@ int parse_question(const char* response_bytes, int bytes_in, DNSQuestion *questi
 }
 
 /* num_records should be converted newtwork to host by caller */
-int parse_records(const char *response_bytes, int bytes_read, int num_records, DNSRecord **head)
+int parse_records(const unsigned char *response_bytes, int bytes_read, int num_records, DNSRecord **head)
 {
     *head = NULL;
     DNSRecord *tail = NULL;
     for (int i=0; i < num_records; ++i) {
+
+        printf("Printing record #%d\n", i+1);
+
+
         // malloc space for new record
         DNSRecord   *cur_record = calloc(1, sizeof(*tail));  // init record->next = NULL                                                                     
         // parse current record
+        printf("about to parse record, bytes_read = %d\n", bytes_read);
         bytes_read = parse_record(response_bytes, bytes_read, cur_record);     // parse record
+        printf("finished parsing record, bytes_read = %d\n", bytes_read);
 
         // append cur record to end of records linked list
         if (*head == NULL) {
@@ -233,7 +242,7 @@ int parse_records(const char *response_bytes, int bytes_read, int num_records, D
     return bytes_read;
 }
 
-int parse_questions(const char *response_bytes, int bytes_read, int num_questions, DNSQuestion **head)
+int parse_questions(const unsigned char *response_bytes, int bytes_read, int num_questions, DNSQuestion **head)
 {
     *head = NULL;
     DNSQuestion *tail = NULL;
@@ -262,12 +271,22 @@ int parse_questions(const char *response_bytes, int bytes_read, int num_question
 //             response_bytes (char*): pointer to response bytes
 //             bytes_in (int): value representing number of bytes already consumed
 // Returns:    Count of number of bytes of response consumed from parsing
-int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
+int parse_record(const unsigned char* response_bytes, int bytes_in, DNSRecord *record)
 {
     char decoded_name[MAX_BUFFER_SIZE] = {0};
     char decoded_data[MAX_BUFFER_SIZE] = {0};
 
+    printf("before decode name\n");
+
+    for (int i=bytes_in; i<512; ++i) {
+        printf("%x ", response_bytes[i]);
+    }
+    printf("\n");
+
     bytes_in = decode_name(response_bytes, bytes_in, decoded_name);
+    printf("after decode name\n");
+
+    printf("parse_record, bytes_in = %d\n", bytes_in);
     
     size_t decoded_len = strlen(decoded_name) + 1; // len + null terminator
     record->name = (char *)malloc(decoded_len);
@@ -316,6 +335,7 @@ int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
     switch (ntohs(record->type))
     {
     case TYPE_A:
+        //printf("TYPEA\n");
         // char     ip[INET_ADDRSTRLEN];
         // Build IPv4 in Host Byte Order (why are the IP address bytes in host byte order?)
         for (int i = 0; i < ntohs(record->bytes_len); i++) {
@@ -328,15 +348,25 @@ int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
         inet_ntop(AF_INET, &ipv4, decoded_data, MAX_BUFFER_SIZE);
         break;
     case TYPE_NS:
+        //printf("TYPE NS\n");
         decode_name(response_bytes, bytes_in, decoded_data);
         break;
     default:
+        /*
+        printf("TYPE OTHER: ");
+        for (int i=0; i<len; ++i) {
+            printf("%x ", record->data_bytes[i]);
+        }
+        printf("\n");
+        */
+
         //this is a palce holder. we don't yet know how to parse non TYPE_A or TYPE NS
-        decode_name(response_bytes, bytes_in, decoded_data);
+        //decode_name(response_bytes, bytes_in, decoded_data);
         break;
     }
 
-    record->data_len = strlen(decoded_data) + 1; // len + null terminator
+    record->data_len = strlen(decoded_data) + 1; // len + null terminator TODO: consider not adding 1
+    //printf("record->data_len = %zu\n", record->data_len); // should be 1 on last time around
     record->data = (char *)malloc(record->data_len);
     strlcpy(record->data, decoded_data, record->data_len);
 
@@ -352,12 +382,13 @@ int parse_record(const char* response_bytes, int bytes_in, DNSRecord *record)
 //             response_bytes (char*): pointer to response bytes
 //             bytes_in (int): value representing number of bytes already consumed
 // Returns:    Count of number of bytes of response consumed from parsing
-int decode_name(const char* response_bytes, int bytes_in, char *decoded_name)
+int decode_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name)
 {
     int name_bytes;
     int len = response_bytes[bytes_in];
     int p;
 
+    printf("decode_name start\n");
     // look for compression flag
     if ((0xc0 & response_bytes[bytes_in]) == 0xc0){
         return decode_compressed_name(response_bytes, bytes_in, decoded_name);
@@ -373,6 +404,7 @@ int decode_name(const char* response_bytes, int bytes_in, char *decoded_name)
             len--;
         }
     }
+    printf("decode_name end\n");
 
     return bytes_in + 1;
 }
@@ -385,15 +417,19 @@ int decode_name(const char* response_bytes, int bytes_in, char *decoded_name)
 //             response_bytes (char*): pointer to response bytes
 //             bytes_in (int): value representing number of bytes already consumed
 // Returns:    Count of number of bytes of response consumed from parsing
-int decode_compressed_name(const char* response_bytes, int bytes_in, char *decoded_name)
+int decode_compressed_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name)
 {
+    printf("decode_compressed_name start from %d\n", bytes_in);
     uint16_t pointer;
 
     pointer = (0xc0 ^ response_bytes[bytes_in]);
     pointer <<= 8;
     pointer |= response_bytes[bytes_in + 1];
 
+    printf("pointer %d\n", pointer);
+
     decode_name(response_bytes, pointer, decoded_name);
+    printf("decode_compressed_name end\n");
 
     return bytes_in + 2;
 }
@@ -402,7 +438,7 @@ DNSPacket *send_query(char *addr, char *domain, u_int16_t type) {
     /* send request */
     int                     sockfd;
     struct sockaddr_in      dest;
-    char                    buf[512];
+    unsigned char                    buf[512];
     struct sockaddr_storage from;
     socklen_t               fromlen;
 
@@ -524,8 +560,10 @@ void display_DNSPacket(DNSPacket *packet)
     display_DNSHeader(packet->header);
     display_DNSQuestion(packet->questions);
     display_DNSRecord(packet->answers);
-    display_DNSRecord(packet->additionals);
+    printf("AUTHORITIES\n");
     display_DNSRecord(packet->authorities);
+    printf("ADDITIONALS\n");
+    display_DNSRecord(packet->additionals);
 }
 
 int destroy_DNSPacket(DNSPacket **packet) {
