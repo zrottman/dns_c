@@ -218,7 +218,6 @@ int parse_records(const unsigned char *response_bytes, int bytes_read, int num_r
     DNSRecord *tail = NULL;
     for (int i=0; i < num_records; ++i) {
 
-        printf("Printing record #%d\n", i+1);
 
 
         // malloc space for new record
@@ -271,17 +270,10 @@ int parse_record(const unsigned char* response_bytes, int bytes_in, DNSRecord *r
     char decoded_name[MAX_BUFFER_SIZE] = {0};
     char decoded_data[MAX_BUFFER_SIZE] = {0};
 
-    printf("before decode name\n");
 
-    for (int i=bytes_in; i<512; ++i) {
-        printf("%x ", response_bytes[i]);
-    }
-    printf("\n");
 
     bytes_in = decode_name(response_bytes, bytes_in, decoded_name);
-    printf("after decode name\n");
 
-    printf("parse_record, bytes_in = %d\n", bytes_in);
     
     size_t decoded_len = strlen(decoded_name) + 1; // len + null terminator
     record->name = (char *)malloc(decoded_len);
@@ -329,35 +321,25 @@ int parse_record(const unsigned char* response_bytes, int bytes_in, DNSRecord *r
     uint32_t   ipv4 = 0;
     switch (ntohs(record->type))
     {
-    case TYPE_A:
-        //printf("TYPEA\n");
-        // char     ip[INET_ADDRSTRLEN];
-        // Build IPv4 in Host Byte Order (why are the IP address bytes in host byte order?)
-        for (int i = 0; i < ntohs(record->bytes_len); i++) {
-            ipv4 <<= 8;
-            ipv4 |= record->data_bytes[i];
-        }
+        case TYPE_A:
+            // char     ip[INET_ADDRSTRLEN];
+            // Build IPv4 in Host Byte Order (why are the IP address bytes in host byte order?)
+            for (int i = 0; i < ntohs(record->bytes_len); i++) {
+                ipv4 <<= 8;
+                ipv4 |= record->data_bytes[i];
+            }
 
-        // Convert IPv4 address to Network Byte Order
-        ipv4 = htonl(ipv4);
-        inet_ntop(AF_INET, &ipv4, decoded_data, MAX_BUFFER_SIZE);
-        break;
-    case TYPE_NS:
-        //printf("TYPE NS\n");
-        decode_name(response_bytes, bytes_in, decoded_data);
-        break;
-    default:
-        /*
-        printf("TYPE OTHER: ");
-        for (int i=0; i<len; ++i) {
-            printf("%x ", record->data_bytes[i]);
-        }
-        printf("\n");
-        */
+            ipv4 = htonl(ipv4);
+            inet_ntop(AF_INET, &ipv4, decoded_data, MAX_BUFFER_SIZE);
+            break;
+        case TYPE_NS:
+            decode_name(response_bytes, bytes_in, decoded_data);
+            break;
+        default:
 
-        //this is a palce holder. we don't yet know how to parse non TYPE_A or TYPE NS
-        //decode_name(response_bytes, bytes_in, decoded_data);
-        break;
+            //this is a palce holder. we don't yet know how to parse non TYPE_A or TYPE NS
+            //decode_name(response_bytes, bytes_in, decoded_data);
+            break;
     }
 
     record->data_len = strlen(decoded_data) + 1; // len + null terminator TODO: consider not adding 1
@@ -384,8 +366,6 @@ int decode_name(const unsigned char* response_bytes, int bytes_in, char *decoded
     int len = response_bytes[bytes_in];
     int p;
 
-    printf("decode_name start\n");
-    printf("current char %x\n", len);
     // look for compression flag
     if ((0xc0 & response_bytes[bytes_in]) == 0xc0){
         return decode_compressed_name(response_bytes, bytes_in, decoded_name);
@@ -415,7 +395,6 @@ int decode_name(const unsigned char* response_bytes, int bytes_in, char *decoded
             return decode_compressed_name(response_bytes, bytes_in, decoded_name);
         }
     }
-    printf("decode_name end\n");
 
     return bytes_in + 1;
 }
@@ -430,22 +409,19 @@ int decode_name(const unsigned char* response_bytes, int bytes_in, char *decoded
 // Returns:    Count of number of bytes of response consumed from parsing
 int decode_compressed_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name)
 {
-    printf("decode_compressed_name start from %d\n", bytes_in);
     uint16_t pointer;
 
     pointer = (0xc0 ^ response_bytes[bytes_in]);
     pointer <<= 8;
     pointer |= response_bytes[bytes_in + 1];
 
-    printf("pointer %d\n", pointer);
 
     decode_name(response_bytes, pointer, decoded_name);
-    printf("decode_compressed_name end\n");
 
     return bytes_in + 2;
 }
 
-DNSPacket *send_query(char *addr, char *domain, u_int16_t type) {
+DNSPacket *send_query(char *addr, char *domain, uint16_t type) {
     /* send request */
     int                     sockfd;
     struct sockaddr_in      dest;
@@ -496,18 +472,95 @@ DNSPacket *send_query(char *addr, char *domain, u_int16_t type) {
     return NewDNSPacket(buf);
 }
 
+int get_answer(DNSPacket* packet, char buf[]) {
+    // return the first A record in the Answer section
+    DNSRecord* cur_answer = packet->answers;
+
+    while (cur_answer) {
+        if (ntohs(cur_answer->type) == TYPE_A) {
+            strlcpy(buf, cur_answer->data, cur_answer->data_len);
+            return 0;
+        }
+        cur_answer = cur_answer->next;
+    }
+
+    return 1;
+}
+
+int get_nameserver_ip(DNSPacket* packet, char buf[]) {
+    // return the first A record in the Additional section
+    DNSRecord* cur_additional = packet->additionals;
+
+    while (cur_additional) {
+        if (ntohs(cur_additional->type) == TYPE_A) {
+            strlcpy(buf, cur_additional->data, cur_additional->data_len);
+            return 0;
+        }
+        cur_additional = cur_additional->next;
+    }
+
+    return 1;
+    
+}
+
+int get_nameserver(DNSPacket* packet, char buf[]) {
+    // return the first A record in the Additional section
+    DNSRecord* cur_authority = packet->authorities;
+
+    while (cur_authority) {
+        if (ntohs(cur_authority->type) == TYPE_NS) {
+            strlcpy(buf, cur_authority->data, cur_authority->data_len);
+            return 0;
+        }
+        cur_authority = cur_authority->next;
+    }
+
+    return 1;
+}
+
+void resolve(char* domain_name, uint16_t record_type, char answer[]) {
+    DNSPacket* packet = NULL;
+    char nameserver[128] = {0};
+
+    strcpy(nameserver, "198.41.0.4");
+    
+    char ns_domain[128] = {0};
+
+    while (1) {
+        printf("Querying %s for %s.\n", nameserver, domain_name);
+        packet = send_query(nameserver, domain_name, record_type);
+        display_DNSPacket(packet);
+        if (get_answer(packet, answer) == 0) {
+            destroy_DNSPacket(&packet);
+            break;
+        } else if (get_nameserver_ip(packet, nameserver) == 0) {
+            destroy_DNSPacket(&packet);
+        } else if (get_nameserver(packet, ns_domain) == 0) {
+            destroy_DNSPacket(&packet);
+            resolve(ns_domain, TYPE_A, nameserver);
+        } else {
+            destroy_DNSPacket(&packet);
+            printf("Error resolving %s.\n", domain_name);
+            break;
+        }
+    }
+
+}
+
+
+
 
 /* DISPLAY FUNCTIONS */
 void display_DNSHeader(DNSHeader *header)
 {
-    printf("RESPONSE: HEADER\n");
-    printf("header->id: %d\n", ntohs(header->id));
-    printf("header->flags: %d\n", ntohs(header->flags));
-    printf("header->num_questions: %d\n", ntohs(header->num_questions));
-    printf("header->num_answers: %d\n", ntohs(header->num_answers));
-    printf("header->num_authorities: %d\n", ntohs(header->num_authorities));
-    printf("header->num_additionals: %d\n", ntohs(header->num_additionals));
-    printf("\n\n");
+    printf("DNSHeader(");
+    printf("id=%d, ", ntohs(header->id));
+    printf("flags=%d, ", ntohs(header->flags));
+    printf("num_questions=%d, ", ntohs(header->num_questions));
+    printf("num_answers=%d, ", ntohs(header->num_answers));
+    printf("num_authorities=%d, ", ntohs(header->num_authorities));
+    printf("num_additionals=%d", ntohs(header->num_additionals));
+    printf(")\n\n");
 
 }
 
@@ -516,14 +569,15 @@ void display_DNSQuestion(DNSQuestion *question)
     DNSQuestion *cur_question = question;
     while (cur_question != NULL) {
 
-        printf("RESPONSE: QUESTION\n");
-        printf("cur_question->name: %s\n", cur_question->name);
-        printf("cur_question->type: %d\n", ntohs(cur_question->type));
-        printf("cur_question->class: %d\n", ntohs(cur_question->class));
-        printf("\n\n");
+        printf("DNSQuestion(");
+        printf("name=%s, ", cur_question->name);
+        printf("type=%d, ", ntohs(cur_question->type));
+        printf("class=%d", ntohs(cur_question->class));
+        printf(")\n");
         
         cur_question = cur_question->next;
     }
+    printf("\n");
 }
 
 void display_DNSRecord(DNSRecord *record)
@@ -546,30 +600,34 @@ void display_DNSRecord(DNSRecord *record)
 
         
 
-        printf("RESPONSE: RECORD\n");
-        printf("cur_record->name: %s\n", cur_record->name);
-        printf("cur_record->type: %d\n", ntohs(cur_record->type));
-        printf("cur_record->class: %d\n", ntohs(cur_record->class));
-        printf("cur_record->ttl %d\n", ntohl(cur_record->ttl));
-        printf("cur_record->bytes_len: %d\n", ntohs(cur_record->bytes_len));
-        printf("cur_record->data_bytes: ");
+        printf("DNSRecord(");
+        printf("name=%s, ", cur_record->name);
+        printf("type=%d, ", ntohs(cur_record->type));
+        printf("class=%d, ", ntohs(cur_record->class));
+        printf("ttl=%d, ", ntohl(cur_record->ttl));
+        printf("bytes_len=%d, ", ntohs(cur_record->bytes_len));
+        printf("data_bytes=");
         for (int i = 0; i < ntohs(cur_record->bytes_len); i++)
         {
-            printf(" %x ", cur_record->data_bytes[i]); 
+            printf("%x ", cur_record->data_bytes[i]); 
         }
-        printf("\n");
-        printf("cur_record_data_len: %zu\n", cur_record->data_len);
-        printf("cur_record->data: %s\n", cur_record->data);
-        printf("\n\n");
+        printf(", ");
+        printf("data_len=%zu, ", cur_record->data_len);
+        printf("data=%s", cur_record->data);
+        printf(")\n");
         
         cur_record = cur_record->next;
     }
+    printf("\n");
 }
 
 void display_DNSPacket(DNSPacket *packet)
 {
+    printf("HEADER\n");
     display_DNSHeader(packet->header);
+    printf("QUESTIONS\n");
     display_DNSQuestion(packet->questions);
+    printf("ANSWERS\n");
     display_DNSRecord(packet->answers);
     printf("AUTHORITIES\n");
     display_DNSRecord(packet->authorities);

@@ -2,6 +2,7 @@
 #define REQUEST_H
 
 #include <stdint.h>
+#include <arpa/inet.h>
 
 #define TYPE_A   1
 #define TYPE_NS  2
@@ -39,15 +40,15 @@ typedef struct DNSQuestion
 typedef struct DNSRecord
 {
     // stored in network byte order
-    char             *name;        // domain name
-    uint16_t          type;        // e.g., A record
-    uint16_t          class;       // 1
-    uint32_t          ttl;         // time to live
-    uint16_t          bytes_len;    // length of data bytes NOTE: net-byte-order!
-    size_t            data_len;    // length of human readable data
-    uint8_t          *data_bytes;  // the record's content
-    char             *data;      // human readable data 
-    struct DNSRecord *next;        // linked list next pointer
+    char             *name;       // domain name
+    uint16_t          type;       // e.g., A record
+    uint16_t          class;      // 1
+    uint32_t          ttl;        // time to live
+    uint16_t          bytes_len;  // length of data bytes NOTE: net-byte-order!
+    size_t            data_len;   // length of human readable data
+    uint8_t          *data_bytes; // the record's content
+    char             *data;       // human readable data 
+    struct DNSRecord *next;       // linked list next pointer
 } DNSRecord;
 
 typedef struct DNSPacket
@@ -87,6 +88,10 @@ int          parse_record(const unsigned char* response_bytes, int bytes_in, DNS
 int          decode_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name);
 int          decode_compressed_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name);
 
+int get_answer(DNSPacket* packet, char buf[]);
+int get_nameserver_ip(DNSPacket* packet, char buf[]);
+int get_nameserver(DNSPacket* packet, char buf[]);
+void resolve(char* domain_name, uint16_t record_type, char answer[]);
 
 
 DNSPacket * send_query(char *addr, char *domain, u_int16_t type);
