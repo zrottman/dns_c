@@ -1,4 +1,16 @@
+#2023-10-27
+We finished!
+- implemented `resolve()` with helper functions. This necessitated careful thinking about how to handle strings.
+- fixed memory leak (accidentally destroying `packet->additionals` twice rather than `packet->additionals` and `packet->authorities`)
+
+To do
+- clean up code
+- add documentation
+- restructure code into smaller libraries
+
+
 # 2023-10-24
+Accomplished
 - fixed segfault issue, which was that `char` type for response buffer needed to be `unsigned char`.
 - fixed compression issue so that we could handle cases where compression flag is not the first byte
 
