@@ -640,7 +640,7 @@ int destroy_DNSPacket(DNSPacket **packet) {
     destroy_DNSQuestion(&((*packet)->questions));
     destroy_DNSRecord(&((*packet)->answers));
     destroy_DNSRecord(&((*packet)->authorities));
-    destroy_DNSRecord(&((*packet)->authorities));
+    destroy_DNSRecord(&((*packet)->additionals));
     free(*packet);
     (*packet) = NULL;
     return 0;
