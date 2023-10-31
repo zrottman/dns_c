@@ -1,4 +1,4 @@
-#include <stdlib.h>
+
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <string.h>
@@ -74,16 +74,15 @@ static DNSQuery *NewDNSQuery(char *domain_name, uint16_t record_type)
 }
 
 static DNSPacket *NewDNSPacket(const unsigned char *response_bytes) {
-    DNSPacket *packet = calloc(1, sizeof(DNSPacket));
+    DNSPacket   *packet      = calloc(1, sizeof(DNSPacket));
+    int          bytes_read;
 
     // parse response
-    DNSHeader   *header   = calloc(1, sizeof(DNSHeader));
-    DNSQuestion *questions = NULL;
-    DNSRecord *answers = NULL;
-    DNSRecord *authorities = NULL;
-    DNSRecord *additionals = NULL;
-
-    int          bytes_read;
+    DNSHeader   *header      = calloc(1, sizeof(DNSHeader));
+    DNSQuestion *questions   = NULL;
+    DNSRecord   *answers     = NULL;
+    DNSRecord   *authorities = NULL;
+    DNSRecord   *additionals = NULL;
 
     // parse header
     bytes_read = parse_header(response_bytes, header);
@@ -217,8 +216,6 @@ static int parse_records(const unsigned char *response_bytes, int bytes_read, in
     *head = NULL;
     DNSRecord *tail = NULL;
     for (int i=0; i < num_records; ++i) {
-
-
 
         // malloc space for new record
         DNSRecord   *cur_record = calloc(1, sizeof(*tail));  // init record->next = NULL                                                                     
