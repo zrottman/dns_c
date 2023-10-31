@@ -1,11 +1,30 @@
-dns : main.o dns.o
-	cc -o dns main.o dns.o
+PATHB = build/
+PATHO = build/objs/
+PATHS = src/
 
-main.o : main.c dns.h
-	cc -c main.c
+BUILD_PATHS = $(PATHB) $(PATHO)
 
-dns.o : dns.c dns.h
-	cc -c dns.c
+OUTFILE = dns
 
+COMPILE = cc -c
+LINK = cc
+
+SRC = $(wildcard $(PATHS)*.c)
+OBJS = $(patsubst $(PATHS)%.c, $(PATHO)%.o, $(SRC))
+
+$(PATHB)$(OUTFILE) : $(BUILD_PATHS) $(OBJS)
+	$(LINK) -o $@ $(OBJS)
+
+$(PATHO)%.o : $(PATHS)%.c 
+	$(COMPILE) $< -o $@
+
+# create necessary directories
+$(PATHB) :
+	mkdir -p $@
+
+$(PATHO) :
+	mkdir -p $@
+
+.PHONY : clean
 clean :
-	rm dns main.o dns.o
+	rm $(PATHB)$(OUTFILE) $(OBJS)
