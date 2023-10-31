@@ -1,11 +1,21 @@
-dns : main.o dns.o
-	cc -o dns main.o dns.o
+PATHB = build/
+PATHO = build/objs/
+PATHS = src/
 
-main.o : main.c dns.h
-	cc -c main.c
+OUTFILE = dns
 
-dns.o : dns.c dns.h
-	cc -c dns.c
+COMPILE = cc -c
+LINK = cc
 
+SRC = $(wildcard $(PATHS)*.c)
+OBJS = $(patsubst $(PATHS)%.c, $(PATHO)%.o, $(SRC))
+
+$(PATHB)$(OUTFILE) : $(OBJS)
+	$(LINK) -o $@ $^
+
+$(PATHO)%.o : $(PATHS)%.c 
+	$(COMPILE) $< -o $@
+
+.PHONY : clean
 clean :
-	rm dns main.o dns.o
+	rm $(PATHB)$(OUTFILE) $(OBJS)
