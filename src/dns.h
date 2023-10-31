@@ -2,8 +2,8 @@
      DNS Resolver
    ------------------------------------------- */
 
-#ifndef REQUEST_H
-#define REQUEST_H
+#ifndef DNS_H
+#define DNS_H
 
 #include <stdint.h>
 #include <arpa/inet.h>
@@ -123,4 +123,4 @@ static size_t       encode_dns_name(char* domain_name, char* res);
 static int          decode_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name);
 static int          decode_compressed_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name);
 
-#endif // REQUEST_H
+#endif // DNS_H
