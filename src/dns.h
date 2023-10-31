@@ -60,39 +60,40 @@ typedef struct DNSPacket
     DNSRecord   *additionals;
 } DNSPacket;
 
-DNSHeader*   NewDNSHeader(uint16_t id, uint16_t flags, uint16_t num_questions);
-DNSQuestion* NewDNSQuestion(char *encoded_name, uint16_t type, uint16_t class);
-DNSQuery*    NewDNSQuery(char *domain_name, uint16_t record_type);
-DNSPacket*   NewDNSPacket(const unsigned char *response_bytes);
+static DNSHeader*   NewDNSHeader(uint16_t id, uint16_t flags, uint16_t num_questions);
+static DNSQuestion* NewDNSQuestion(char *encoded_name, uint16_t type, uint16_t class);
+static DNSQuery*    NewDNSQuery(char *domain_name, uint16_t record_type);
+static DNSPacket*   NewDNSPacket(const unsigned char *response_bytes);
 
-int          destroy_DNSPacket(DNSPacket** packet);
-int          destroy_DNSHeader(DNSHeader** header);
-int	     destroy_DNSQuery(DNSQuery** query);
-int          destroy_DNSQuestion(DNSQuestion** question);
-int          destroy_DNSRecord(DNSRecord** record);
+static int          destroy_DNSPacket(DNSPacket** packet);
+static int          destroy_DNSHeader(DNSHeader** header);
+static int	        destroy_DNSQuery(DNSQuery** query);
+static int          destroy_DNSQuestion(DNSQuestion** question);
+static int          destroy_DNSRecord(DNSRecord** record);
 
-void         display_DNSHeader(DNSHeader *header);
-void         display_DNSQuestion(DNSQuestion *question);
-void         display_DNSRecord(DNSRecord *record);
-void         display_DNSPacket(DNSPacket *packet);
+static void         display_DNSHeader(DNSHeader *header);
+static void         display_DNSQuestion(DNSQuestion *question);
+static void         display_DNSRecord(DNSRecord *record);
+static void         display_DNSPacket(DNSPacket *packet);
 
-size_t       encode_dns_name(char* domain_name, char* res);
-void         header_to_bytes(DNSHeader *header, char *header_bytes);
-void         question_to_bytes(DNSQuestion *question, char *question_bytes);
-size_t       parse_header(const unsigned char* response_bytes, DNSHeader *header);
-int          parse_questions(const unsigned char *response_bytes, int bytes_read, int num_questions, DNSQuestion **head);
-int          parse_question(const unsigned char* response_bytes, int bytes_in, DNSQuestion *question);
-int          parse_records(const unsigned char *response_bytes, int bytes_read, int num_records, DNSRecord **head);
-int          parse_record(const unsigned char* response_bytes, int bytes_in, DNSRecord *record);
+static size_t       encode_dns_name(char* domain_name, char* res);
+static void         header_to_bytes(DNSHeader *header, char *header_bytes);
+static void         question_to_bytes(DNSQuestion *question, char *question_bytes);
+static size_t       parse_header(const unsigned char* response_bytes, DNSHeader *header);
+static int          parse_questions(const unsigned char *response_bytes, int bytes_read, int num_questions, DNSQuestion **head);
+static int          parse_question(const unsigned char* response_bytes, int bytes_in, DNSQuestion *question);
+static int          parse_records(const unsigned char *response_bytes, int bytes_read, int num_records, DNSRecord **head);
+static int          parse_record(const unsigned char* response_bytes, int bytes_in, DNSRecord *record);
 
-int          decode_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name);
-int          decode_compressed_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name);
+static int          decode_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name);
+static int          decode_compressed_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name);
 
-int get_answer(DNSPacket* packet, char buf[]);
-int get_nameserver_ip(DNSPacket* packet, char buf[]);
-int get_nameserver(DNSPacket* packet, char buf[]);
-void resolve(char* domain_name, uint16_t record_type, char answer[]);
+static int          get_answer(DNSPacket* packet, char buf[]);
+static int          get_nameserver_ip(DNSPacket* packet, char buf[]);
+static int          get_nameserver(DNSPacket* packet, char buf[]);
+void                resolve(char* domain_name, uint16_t record_type, char answer[]);
 
 
-DNSPacket * send_query(char *addr, char *domain, u_int16_t type);
+static DNSPacket *  send_query(char *addr, char *domain, u_int16_t type);
+
 #endif // REQUEST_H

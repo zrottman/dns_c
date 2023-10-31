@@ -13,7 +13,7 @@
 //              flags (uint16_t):
 //              num_questions (uint16_t):
 // Returns:    Pointer to malloc'ed DNSHeader
-DNSHeader* NewDNSHeader(uint16_t id, uint16_t flags, uint16_t num_questions)
+static DNSHeader* NewDNSHeader(uint16_t id, uint16_t flags, uint16_t num_questions)
 {
     DNSHeader *header     = calloc(1, sizeof(DNSHeader));
     header->id            = htons(id);
@@ -30,7 +30,7 @@ DNSHeader* NewDNSHeader(uint16_t id, uint16_t flags, uint16_t num_questions)
 //              type (uint16_t): e.g., TYPE_A = 1
 //              class (uint16_t): e.g., CLASS_IN=1 (for internet)
 // Returns:    Pointer to malloc'ed DNSQuestion
-DNSQuestion* NewDNSQuestion(char *encoded_name, uint16_t type, uint16_t class)
+static DNSQuestion* NewDNSQuestion(char *encoded_name, uint16_t type, uint16_t class)
 {
     DNSQuestion *question  = calloc(1, sizeof(DNSQuestion));
     question->name = malloc(strlen(encoded_name) + 1);
@@ -48,7 +48,7 @@ DNSQuestion* NewDNSQuestion(char *encoded_name, uint16_t type, uint16_t class)
 //              domain_name (char*): domain name to resolve in presentation format
 //              record_type: e.g., TYPE_A = 1
 // Returns:    Pointer to malloc'ed DNSQuery
-DNSQuery *NewDNSQuery(char *domain_name, uint16_t record_type) 
+static DNSQuery *NewDNSQuery(char *domain_name, uint16_t record_type) 
 {
     // create header
     int        id = 0; // TODO general random ID to pass to NewHeader()
@@ -73,7 +73,7 @@ DNSQuery *NewDNSQuery(char *domain_name, uint16_t record_type)
     return query;
 }
 
-DNSPacket *NewDNSPacket(const unsigned char *response_bytes) {
+static DNSPacket *NewDNSPacket(const unsigned char *response_bytes) {
     DNSPacket *packet = calloc(1, sizeof(DNSPacket));
 
     // parse response
@@ -116,7 +116,7 @@ DNSPacket *NewDNSPacket(const unsigned char *response_bytes) {
 //              domain_name (char*): domain name to encode
 //              res (char*): buffer to hold result
 // Returns:    Length of encoded name
-size_t encode_dns_name(char *domain_name, char *res)
+static size_t encode_dns_name(char *domain_name, char *res)
 {
     int dni = strlen(domain_name);
 	// The result is shifted over by one, so set the null terminator.
@@ -150,7 +150,7 @@ size_t encode_dns_name(char *domain_name, char *res)
 //              header (DNSHeader*): pointer to DNSHeader to encode
 //              header_bytes (char*): buffer to hold encoded result
 // Returns:    void
-void header_to_bytes(DNSHeader *header, char *header_bytes) {
+static void header_to_bytes(DNSHeader *header, char *header_bytes) {
     char *encoded = (char*)header;
     memcpy(header_bytes, encoded, sizeof *header);
 }
@@ -162,7 +162,7 @@ void header_to_bytes(DNSHeader *header, char *header_bytes) {
 //              question (DNSQuestion*): pointer to DNSQuestion to encode
 //              question_bytes (char*): buffer to hold encoded result
 // Returns:    void
-void question_to_bytes(DNSQuestion *question, char *question_bytes) {
+static void question_to_bytes(DNSQuestion *question, char *question_bytes) {
     char *p;
 
     strcpy(question_bytes, question->name);
@@ -181,7 +181,7 @@ void question_to_bytes(DNSQuestion *question, char *question_bytes) {
 //              response_bytes (char*): pointer to response bytes
 //              header (DNSHeader*): pointer to empty DNSHeader struct for result
 // Returns:    Count of number of bytes of response consumed from header parsing
-size_t parse_header(const unsigned char* response_bytes, DNSHeader *header)
+static size_t parse_header(const unsigned char* response_bytes, DNSHeader *header)
 {
     memcpy(header, response_bytes, sizeof(*header));
     return 12; 
@@ -195,7 +195,7 @@ size_t parse_header(const unsigned char* response_bytes, DNSHeader *header)
 //             response_bytes (char*): pointer to response bytes
 //             bytes_in (int): value representing number of bytes already consumed
 // Returns:    Count of number of bytes of response consumed from parsing
-int parse_question(const unsigned char* response_bytes, int bytes_in, DNSQuestion *question)
+static int parse_question(const unsigned char* response_bytes, int bytes_in, DNSQuestion *question)
 {
     char decoded_name[MAX_BUFFER_SIZE] = {0};
 
@@ -212,7 +212,7 @@ int parse_question(const unsigned char* response_bytes, int bytes_in, DNSQuestio
 }
 
 /* num_records should be converted newtwork to host by caller */
-int parse_records(const unsigned char *response_bytes, int bytes_read, int num_records, DNSRecord **head)
+static int parse_records(const unsigned char *response_bytes, int bytes_read, int num_records, DNSRecord **head)
 {
     *head = NULL;
     DNSRecord *tail = NULL;
@@ -236,7 +236,7 @@ int parse_records(const unsigned char *response_bytes, int bytes_read, int num_r
     return bytes_read;
 }
 
-int parse_questions(const unsigned char *response_bytes, int bytes_read, int num_questions, DNSQuestion **head)
+static int parse_questions(const unsigned char *response_bytes, int bytes_read, int num_questions, DNSQuestion **head)
 {
     *head = NULL;
     DNSQuestion *tail = NULL;
@@ -265,7 +265,7 @@ int parse_questions(const unsigned char *response_bytes, int bytes_read, int num
 //             response_bytes (char*): pointer to response bytes
 //             bytes_in (int): value representing number of bytes already consumed
 // Returns:    Count of number of bytes of response consumed from parsing
-int parse_record(const unsigned char* response_bytes, int bytes_in, DNSRecord *record)
+static int parse_record(const unsigned char* response_bytes, int bytes_in, DNSRecord *record)
 {
     char decoded_name[MAX_BUFFER_SIZE] = {0};
     char decoded_data[MAX_BUFFER_SIZE] = {0};
@@ -360,7 +360,7 @@ int parse_record(const unsigned char* response_bytes, int bytes_in, DNSRecord *r
 //             bytes_in (int): value representing number of bytes already consumed
 // Returns:    Count of number of bytes of response consumed from parsing
 // Piya points out that funciton has become impossible to reason about. We should refactor it.
-int decode_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name)
+static int decode_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name)
 {
     int name_bytes;
     int len = response_bytes[bytes_in];
@@ -407,7 +407,7 @@ int decode_name(const unsigned char* response_bytes, int bytes_in, char *decoded
 //             response_bytes (char*): pointer to response bytes
 //             bytes_in (int): value representing number of bytes already consumed
 // Returns:    Count of number of bytes of response consumed from parsing
-int decode_compressed_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name)
+static int decode_compressed_name(const unsigned char* response_bytes, int bytes_in, char *decoded_name)
 {
     uint16_t pointer;
 
@@ -421,7 +421,7 @@ int decode_compressed_name(const unsigned char* response_bytes, int bytes_in, ch
     return bytes_in + 2;
 }
 
-DNSPacket *send_query(char *addr, char *domain, uint16_t type) {
+static DNSPacket *send_query(char *addr, char *domain, uint16_t type) {
     /* send request */
     int                     sockfd;
     struct sockaddr_in      dest;
@@ -472,7 +472,7 @@ DNSPacket *send_query(char *addr, char *domain, uint16_t type) {
     return NewDNSPacket(buf);
 }
 
-int get_answer(DNSPacket* packet, char buf[]) {
+static int get_answer(DNSPacket* packet, char buf[]) {
     // return the first A record in the Answer section
     DNSRecord* cur_answer = packet->answers;
 
@@ -487,7 +487,7 @@ int get_answer(DNSPacket* packet, char buf[]) {
     return 1;
 }
 
-int get_nameserver_ip(DNSPacket* packet, char buf[]) {
+static int get_nameserver_ip(DNSPacket* packet, char buf[]) {
     // return the first A record in the Additional section
     DNSRecord* cur_additional = packet->additionals;
 
@@ -503,7 +503,7 @@ int get_nameserver_ip(DNSPacket* packet, char buf[]) {
     
 }
 
-int get_nameserver(DNSPacket* packet, char buf[]) {
+static int get_nameserver(DNSPacket* packet, char buf[]) {
     // return the first A record in the Additional section
     DNSRecord* cur_authority = packet->authorities;
 
@@ -551,7 +551,7 @@ void resolve(char* domain_name, uint16_t record_type, char answer[]) {
 
 
 /* DISPLAY FUNCTIONS */
-void display_DNSHeader(DNSHeader *header)
+static void display_DNSHeader(DNSHeader *header)
 {
     printf("DNSHeader(");
     printf("id=%d, ", ntohs(header->id));
@@ -564,7 +564,7 @@ void display_DNSHeader(DNSHeader *header)
 
 }
 
-void display_DNSQuestion(DNSQuestion *question)
+static void display_DNSQuestion(DNSQuestion *question)
 {
     DNSQuestion *cur_question = question;
     while (cur_question != NULL) {
@@ -580,7 +580,7 @@ void display_DNSQuestion(DNSQuestion *question)
     printf("\n");
 }
 
-void display_DNSRecord(DNSRecord *record)
+static void display_DNSRecord(DNSRecord *record)
 {
     DNSRecord *cur_record = record;
     while (cur_record != NULL) {
@@ -621,7 +621,7 @@ void display_DNSRecord(DNSRecord *record)
     printf("\n");
 }
 
-void display_DNSPacket(DNSPacket *packet)
+static void display_DNSPacket(DNSPacket *packet)
 {
     printf("HEADER\n");
     display_DNSHeader(packet->header);
@@ -635,7 +635,7 @@ void display_DNSPacket(DNSPacket *packet)
     display_DNSRecord(packet->additionals);
 }
 
-int destroy_DNSPacket(DNSPacket **packet) {
+static int destroy_DNSPacket(DNSPacket **packet) {
     destroy_DNSHeader(&((*packet)->header));
     destroy_DNSQuestion(&((*packet)->questions));
     destroy_DNSRecord(&((*packet)->answers));
@@ -646,13 +646,13 @@ int destroy_DNSPacket(DNSPacket **packet) {
     return 0;
 }
 
-int destroy_DNSHeader(DNSHeader **header) {
+static int destroy_DNSHeader(DNSHeader **header) {
     free(*header);
     (*header) = NULL;
     return 0;
 }
 
-int destroy_DNSQuestion(DNSQuestion **question) {
+static int destroy_DNSQuestion(DNSQuestion **question) {
     // Am I correctly destroying the *next link? Is there a mem leak here?
     DNSQuestion *cur  = *question;
     DNSQuestion *next;
@@ -676,7 +676,7 @@ int destroy_DNSQuestion(DNSQuestion **question) {
 }
 
 
-int destroy_DNSQuery(DNSQuery **query) {
+static int destroy_DNSQuery(DNSQuery **query) {
     free((*query)->s);
     (*query)->s = NULL;
 
@@ -685,7 +685,7 @@ int destroy_DNSQuery(DNSQuery **query) {
     return 0;
 }
 
-int destroy_DNSRecord(DNSRecord **record) {
+static int destroy_DNSRecord(DNSRecord **record) {
     // Am I correctly destroying the *next link? Is there a mem leak here?
     DNSRecord *cur  = *record;
     DNSRecord *next;
