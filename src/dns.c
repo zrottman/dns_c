@@ -211,14 +211,13 @@ static int parse_question(const unsigned char* response_bytes, int bytes_in, DNS
     return bytes_in + 4;
 }
 
-/* num_records should be converted newtwork to host by caller */
 static int parse_records(const unsigned char *response_bytes, int bytes_read, int num_records, DNSRecord **head)
 {
+    /* num_records should be converted network to host by caller */
+
     *head = NULL;
     DNSRecord *tail = NULL;
     for (int i=0; i < num_records; ++i) {
-
-
 
         // malloc space for new record
         DNSRecord   *cur_record = calloc(1, sizeof(*tail));  // init record->next = NULL                                                                     
@@ -238,6 +237,8 @@ static int parse_records(const unsigned char *response_bytes, int bytes_read, in
 
 static int parse_questions(const unsigned char *response_bytes, int bytes_read, int num_questions, DNSQuestion **head)
 {
+    /* num_questions should be converted network to host by caller */
+
     *head = NULL;
     DNSQuestion *tail = NULL;
     for (int i=0; i < num_questions; ++i) {
@@ -270,12 +271,10 @@ static int parse_record(const unsigned char* response_bytes, int bytes_in, DNSRe
     char decoded_name[MAX_BUFFER_SIZE] = {0};
     char decoded_data[MAX_BUFFER_SIZE] = {0};
 
-
-
     bytes_in = decode_name(response_bytes, bytes_in, decoded_name);
-
     
     size_t decoded_len = strlen(decoded_name) + 1; // len + null terminator
+                                                   //
     record->name = (char *)malloc(decoded_len);
     strlcpy(record->name, decoded_name, decoded_len);
 
@@ -285,44 +284,14 @@ static int parse_record(const unsigned char* response_bytes, int bytes_in, DNSRe
     int      len = ntohs(record->bytes_len);
     uint8_t *data_bytes = malloc(len);
 
-    // TODO: we are going to store data_bytes in human readable format
-    // 2.123.23.14 for ip addresses and www.example.com for domains
-    //
-    // when we get here, we are at the payload portion of the response_bytes.
-    //
-    // if we're in an a record, convert that to presentation and store human readable ip address at data
-    //    53/f3/d3/04 -> 123.23.24.13
-    //
-    // if we're in an NS record, we need to decode that and store decoded at data
-    //    03/www/07./example/03/com -> www.example.com
-    //
-    // either way, do the same process above: make a buffer, pass into a function to parse ip address or decode name,
-    // and then malloc space from there based on string length and return pointer to that char*
-    //
-    // question: should record->bytes_len change to length of human readable versions above?
-    //
-    // consider revising struct to include original data length and data bytes AND parsed/decoded data length and data bytes
-    //
-    // and the reason we're doing this again is because when we recursively search for an NS record domain, we need to
-    // pass in the human-readable domain name, and in the event that is compressed, we need to decode it first
-    //
-    // switch(record->type) {
-    //     case TYPE_A:    
-    //                     break;
-
-    //     case TYPE_NS:   
-    //                     break;
-
-    //     default:        
-    // }
-
     memcpy(data_bytes, response_bytes + bytes_in, len);
     record->data_bytes = data_bytes;
+
     uint32_t   ipv4 = 0;
+
     switch (ntohs(record->type))
     {
         case TYPE_A:
-            // char     ip[INET_ADDRSTRLEN];
             // Build IPv4 in Host Byte Order (why are the IP address bytes in host byte order?)
             for (int i = 0; i < ntohs(record->bytes_len); i++) {
                 ipv4 <<= 8;
@@ -336,14 +305,12 @@ static int parse_record(const unsigned char* response_bytes, int bytes_in, DNSRe
             decode_name(response_bytes, bytes_in, decoded_data);
             break;
         default:
-
-            //this is a palce holder. we don't yet know how to parse non TYPE_A or TYPE NS
+            //this is a place holder. we don't yet know how to parse non TYPE_A or TYPE NS
             //decode_name(response_bytes, bytes_in, decoded_data);
             break;
     }
 
-    record->data_len = strlen(decoded_data) + 1; // len + null terminator TODO: consider not adding 1
-    //printf("record->data_len = %zu\n", record->data_len); // should be 1 on last time around
+    record->data_len = strlen(decoded_data) + 1; // len + null terminator 
     record->data = (char *)malloc(record->data_len);
     strlcpy(record->data, decoded_data, record->data_len);
 
@@ -370,20 +337,8 @@ static int decode_name(const unsigned char* response_bytes, int bytes_in, char *
     if ((0xc0 & response_bytes[bytes_in]) == 0xc0){
         return decode_compressed_name(response_bytes, bytes_in, decoded_name);
     }
-    // TODO: consider splitting this into its own function
-    //       maybe call it "int split_domain"
-    //ex: 03www07example03com => www.example.come
-    //ex: 02e.COMPRESSIONFLAG => decode_compressed_name(response_bytes, bytes_in, e.)
-    //NOTE: we just refactored p = 0 to start with the length of decoded_name because 
-    //decode_compressed_name corecursivly calls decode_name and therefore setting p to 0 overwrites decoded_name
-    
-    //Zach says the problem is that this loop assumes that the first byte is a length byte and then discards it
-    //we should rewrite the logic here to account for the first byte and then we can get rid of the redundant check for compression flags
+
     for(++bytes_in, p = strlen(decoded_name); response_bytes[bytes_in] != '\0' && p < MAX_BUFFER_SIZE-1; ++bytes_in, ++p){
-        // this addresses the address boundry error, but decrementing bytes_in errases some of dcoded_name
-        // if ((0xc0 & response_bytes[--bytes_in]) == 0xc0){
-        //     return decode_compressed_name(response_bytes, bytes_in, decoded_name);
-        // }
         if (len == 0){
             len = response_bytes[bytes_in];
             decoded_name[p] = '.';
@@ -422,7 +377,7 @@ static int decode_compressed_name(const unsigned char* response_bytes, int bytes
 }
 
 static DNSPacket *send_query(char *addr, char *domain, uint16_t type) {
-    /* send request */
+    // send request
     int                     sockfd;
     struct sockaddr_in      dest;
     unsigned char                    buf[512];
@@ -547,9 +502,6 @@ void resolve(char* domain_name, uint16_t record_type, char answer[]) {
 
 }
 
-
-
-
 /* DISPLAY FUNCTIONS */
 static void display_DNSHeader(DNSHeader *header)
 {
@@ -584,21 +536,6 @@ static void display_DNSRecord(DNSRecord *record)
 {
     DNSRecord *cur_record = record;
     while (cur_record != NULL) {
-
-        // uint32_t ipv4 = 0;
-        // char     ip[INET_ADDRSTRLEN];
-
-        // // Build IPv4 in Host Byte Order (why are the IP address bytes in host byte order?)
-        // for (int i = 0; i < ntohs(cur_record->bytes_len); i++) {
-        //     ipv4 <<= 8;
-        //     ipv4 |= cur_record->data_bytes[i];
-        // }
-
-        // // Convert IPv4 address to Network Byte Order
-        // ipv4 = htonl(ipv4);
-        // inet_ntop(AF_INET, &ipv4, ip, INET_ADDRSTRLEN);
-
-        
 
         printf("DNSRecord(");
         printf("name=%s, ", cur_record->name);
@@ -635,6 +572,7 @@ static void display_DNSPacket(DNSPacket *packet)
     display_DNSRecord(packet->additionals);
 }
 
+/* DESTROY FUNCTIONS */
 static int destroy_DNSPacket(DNSPacket **packet) {
     destroy_DNSHeader(&((*packet)->header));
     destroy_DNSQuestion(&((*packet)->questions));
@@ -653,7 +591,6 @@ static int destroy_DNSHeader(DNSHeader **header) {
 }
 
 static int destroy_DNSQuestion(DNSQuestion **question) {
-    // Am I correctly destroying the *next link? Is there a mem leak here?
     DNSQuestion *cur  = *question;
     DNSQuestion *next;
     
@@ -686,7 +623,6 @@ static int destroy_DNSQuery(DNSQuery **query) {
 }
 
 static int destroy_DNSRecord(DNSRecord **record) {
-    // Am I correctly destroying the *next link? Is there a mem leak here?
     DNSRecord *cur  = *record;
     DNSRecord *next;
 
