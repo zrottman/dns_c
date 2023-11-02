@@ -399,25 +399,28 @@ static DNSPacket *send_query(char *addr, char *domain, uint16_t type) {
     if (bytes_sent == -1)
         perror("sendto");
 
-
-    // print query bytes
-    printf("%ld bytes sent: \n", bytes_sent);
-    for (int i=0; i<query->len; ++i) {
-        printf("%x/", (char)query->s[i]);
-    }
-    printf("\n\n");
-
     // receive result
     ssize_t bytes_received = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr *)&from, &fromlen);
     if (bytes_received == -1)
         perror("recvfrom");
 
+    // TODO: print bytes onle if in verbose mode, see issue #52
+    // print query bytes
+    /*
+    printf("%ld bytes sent: \n", bytes_sent);
+    for (int i=0; i<query->len; ++i) {
+        printf("%x/", (char)query->s[i]);
+    }
+    printf("\n\n");
+    */
     // print result bytes
+    /*
     printf("%zd bytes received: \n", bytes_received);
     for (int i=0; i<bytes_received; ++i) {
         printf("%x/", (unsigned char)buf[i]);
     }
     printf("\n\n");
+    */
 
     destroy_DNSQuery(&query);
     
@@ -484,7 +487,7 @@ void resolve(char* domain_name, uint16_t record_type, char answer[]) {
     while (1) {
         printf("Querying %s for %s.\n", nameserver, domain_name);
         packet = send_query(nameserver, domain_name, record_type);
-        display_DNSPacket(packet);
+        //display_DNSPacket(packet);
         if (get_answer(packet, answer) == 0) {
             destroy_DNSPacket(&packet);
             break;
