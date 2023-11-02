@@ -15,6 +15,3 @@
 
 #Ignore object files
 *.o
-
-# Ignore tapes/ (for screen recording)
-tapes/
