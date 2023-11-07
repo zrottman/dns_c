@@ -1,9 +1,3 @@
-#include <stdlib.h>
-#include <arpa/inet.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdio.h>
-#include <unistd.h>
 #include "dns.h"
 
 // Function:    NewDNSHeader
