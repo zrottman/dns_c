@@ -6,8 +6,8 @@ BUILD_PATHS = $(PATHB) $(PATHO)
 
 OUTFILE = dns
 
-COMPILE = cc -c
-LINK = cc
+COMPILE = cc -c -Wall -Wpedantic -Werror
+LINK = cc 
 
 SRC = $(wildcard $(PATHS)*.c)
 OBJS = $(patsubst $(PATHS)%.c, $(PATHO)%.o, $(SRC))
