@@ -71,11 +71,11 @@ static DNSPacket *NewDNSPacket(const unsigned char *response_bytes) {
     DNSPacket *packet = calloc(1, sizeof(DNSPacket));
 
     // parse response
-    DNSHeader   *header   = calloc(1, sizeof(DNSHeader));
-    DNSQuestion *questions = NULL;
-    DNSRecord *answers = NULL;
-    DNSRecord *authorities = NULL;
-    DNSRecord *additionals = NULL;
+    DNSHeader   *header      = calloc(1, sizeof(DNSHeader));
+    DNSQuestion *questions   = NULL;
+    DNSRecord   *answers     = NULL;
+    DNSRecord   *authorities = NULL;
+    DNSRecord   *additionals = NULL;
 
     int          bytes_read;
 
